@@ -1,0 +1,92 @@
+---
+title: "LANDFIRE Powered Historical Fire Regime Reports"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+    theme: 
+      version: 4
+      bootswatch: flatly
+    
+    
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(leaflet)
+library(sf)
+library(tidyverse)
+```
+
+
+```{r data prep, message=FALSE, warning=FALSE, include=FALSE}
+#  read shape
+shp <- st_read("inputs/sections.shp") 
+
+%>% 
+  st_transform(crs = 4326) %>%
+  arrange(FORESTNAME)
+
+paths <- list.files('output', pattern = '.html', all.files = TRUE, full.names = TRUE) %>%
+  sort()
+  
+
+shp <- cbind(shp, paths)
+```
+
+
+
+##  Need something here
+
+<font size="6"> Region 9 National Forests </font>
+
+```{r clickable map, echo=FALSE, message=FALSE, warning=FALSE, fig.width=16, fig.height=10}
+
+
+leaflet(shp) %>%
+  addProviderTiles(providers$CartoDB.Positron) %>%
+  addPolygons(color = "#404241", weight = 1, smoothFactor = 0.5,
+    opacity = 1.0, fillOpacity = 0.5,
+    fillColor = "#0b631a",
+    highlightOptions = highlightOptions(color = "white", weight = 3,
+      bringToFront = TRUE),
+    popup = paste0( "For report"
+                 , shp$FORESTNAME
+                 , "<br>"
+                 , "<a href='"
+                 , shp$paths
+                 , "' target='_blank'>"
+                 , "Click Here</a>"
+               )
+    
+    
+    
+    
+    
+    )
+
+
+```
+
+
+
+Column {.sidebar data-width=500}
+-----------------------------------------------------------------------
+<b><font  size="4em" color="#000000">Exploring Historical Fire Regimes with LANDFIRE data</font></b>  
+
+
+Curious about the historical fire regimes and to practice using parameterized reports in R, I put together this simple dashboard using US Forest Service admin boundaries (https://data.fs.usda.gov/geodata/edw/datasets.php?dsetCategory=boundaries) and LANDFIRE's Biophysical Settings Data (https://landfire.gov/vegetation/bps).  
+
+A few fun facts emerged when summarizing for the top most representative BpSs for each forest:
+
+* There was an average of over 750,000 acres of fire each year prior to European Colonization within the forests of Region 9
+* Midewin National Tallgrass Prairie had the most fire with over 143,000 acres per year
+* The forests dominated by northern hardwoods, such as the Ottawa had fire as well (~8,000ac), though less than those to the south. 
+
+**Click on the forest to get a link to a custom report**
+
+![](conus_mfri.jpg){width=100%}
+
+Map of historical Mean Fire Return Invervals made with LANDFIRE Biophysical Settings data (https://landfire.gov/vegetation/bps).
+
+

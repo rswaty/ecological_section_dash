@@ -1,0 +1,379 @@
+---
+title: "Ecosystems past and present for the `r params$map_unit_n` Ecological Section"
+author: "Randy Swaty"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    theme: flatly
+    page-layout: full
+    toc: true
+    toc_float:
+      collapsed: true
+params:
+  map_unit_n: "Okanogan Highland"
+
+---
+
+
+
+```{r setup, message=FALSE, warning=FALSE, include=FALSE}
+
+library(janitor)
+library(tidyverse)
+library(stringr)
+library(scales)
+library(plotly)
+library(viridis)
+library(DT)
+library(tidytext)
+library(viridis)
+
+section <- params$map_unit_n
+
+# read and wrangle raw data
+
+bad_groups <- c(
+  "Barren-Rock/Sand/Clay",
+  "Fill-NoData",
+  "Fill-Not Mapped",
+  "Open Water",
+  "Perennial Ice/Snow",
+  "Sparse"
+)
+
+data <- read.csv("inputs/combine_raw.csv") |>
+  clean_names() |>
+  filter(map_unit_n == "Okanogan Highland") |>
+  filter(!groupveg %in% bad_groups) |>
+  mutate(raw_acres = round(count * 0.2223945)) |>
+  mutate(across(everything(), ~replace(., . == -9999, 0)))
+
+bps_transitions <- read.csv('inputs/bps_transitions.csv')
+
+ref_con <- read.csv("inputs/ref_con_long.csv") |>
+  rename(bps_model = model_code)
+
+
+
+
+# prep data for bps bar chart
+bps_name_df <- data |>
+  group_by(bps_name) |>
+  summarize(acres = sum(raw_acres)) |>
+  arrange(desc(acres)) |>
+  top_n(n = 10, wt = acres)
+
+# prep data for disturbances chart
+
+top_bps <- bps_name_df$bps_name
+
+bps_trans_filt <- bps_transitions |>
+  filter(bps_name %in% top_bps)
+
+bps_trans_summarized <- bps_trans_filt |>
+  mutate(pct_disturbed_yr = annual_probability * 100) |>
+  group_by(bps_name, transition) |>
+  summarize(
+    pct_disturbed_yr = mean(pct_disturbed_yr, na.rm = TRUE),
+    n_models = n(),        # optional but useful for QA
+    .groups = "drop"
+  )
+
+
+bps_trans_plot <- bps_trans_summarized |>
+  left_join(bps_name_df, by = "bps_name") |>
+  mutate(
+    bps_name = fct_reorder(bps_name, acres)
+  )
+
+
+# data for summary bullets
+
+top_bps_name <- bps_name_df |>
+  slice_max(acres, n = 1) |>
+  pull(bps_name)
+
+top_bps_acres <- bps_name_df |>
+  slice_max(acres, n = 1) |>
+  pull(acres)
+
+
+number_of_bps <- length(unique(data$bps_name))
+
+
+
+
+
+```
+
+## Background
+
+LANDFIRE's [Biophysical Settings (BpS)](https://www.landfire.gov/vegetation/bps) tell many stories-where ecosystems were likely to occur historically, how they looked and functioned.  Here we couple them with LANDFIRE's [Succession Class](https://landfire.gov/vegetation/sclass) data to explore under and over represented structural stages (reference vs. present) then use the US Geological Service's [Protected Areas Database](https://www.usgs.gov/programs/gap-analysis-project/science/pad-us-data-overview) to delineate levels of protection per Biophysical Settings.  Additionally we quantify  historical amounts of modeled disturbances. 
+
+Officially BpSs are:
+
+> "A modeled representation of the vegetation system that may have been dominant on the landscape prior to Euro-American settlement and is based on both the current biophysical environment and an approximation of modeled past disturbance regimes. LF uses BPS to depict reference conditions of vegetation across landscapes."
+
+
+
+## Summary
+
+
+From a quick assessment of the Biophysical Settings for **`r section`** we found:
+
+* There were **`r number_of_bps`** Biophysical Settings (by name, there may be more if counting by variants).  The **`r top_bps_name`** was the most prevalent overall.
+
+
+<br>
+
+<br>
+
+
+## Amount of each Biophysical Setting in this Ecological Section (top 10 by acres)
+
+```{r bps chart, message=FALSE, warning=FALSE, echo=FALSE, fig.width=10, fig.height=12}
+
+# plot
+bps_name_chart <- 
+  ggplot(data = bps_name_df, aes(x = bps_name, y = acres)) +
+  geom_bar(stat = "identity") +
+  labs(
+    subtitle = "Represents dominant vegetation systems pre-European colonization",
+    caption = "Data from landfire.gov.",
+    x = "",
+    y = "Acres") +
+  scale_x_discrete(limits = rev(bps_name_df$bps_name),
+                   labels = function(x) str_wrap(x, width = 18)) +
+  scale_y_continuous(labels = comma) +
+  coord_flip() +
+  theme_bw(base_size = 14)
+
+
+bps_name_chart
+
+
+```
+
+
+
+
+## Protected area status
+
+Below we assessed GAP protection level for each of the top 10 BpSs.  The GAP status codes are defined as (copied from [https://www.usgs.gov/programs/gap-analysis-project/gap-status-code-frequently-asked-questions-faq](https://www.usgs.gov/programs/gap-analysis-project/gap-status-code-frequently-asked-questions-faq)) 
+
+
+> 1: An area having permanent protection from conversion of natural land cover and a mandated management plan in operation to maintain a natural state within which disturbance events (of natural type, frequency, intensity, and legacy) are allowed to proceed without interference or are mimicked through management.
+
+> 2: An area having permanent protection from conversion of natural land cover and a mandated management plan in operation to maintain a primarily natural state, but which may receive uses or management practices that degrade the quality of existing natural communities, including suppression of natural disturbance.
+
+> 3: An area having permanent protection from conversion of natural land cover for the majority of the area, but subject to extractive uses of either a broad, low intensity type (for example, logging, Off-Highway Vehicle recreation) or localized intense type (for example, mining). It also confers protection to federally listed endangered and threatened species throughout the area.
+
+> 4: There are no known public or private institutional mandates, or legally recognized easements or deed restrictions held by the managing entity to prevent conversion of natural habitat types to anthropogenic habitat types. The area generally allows conversion to unnatural land cover throughout or management intent is unknown.
+
+
+
+```{r}
+#| label: protected area
+#| echo: false
+#| message: false
+#| warning: false
+#| fig.height: 14
+#| fig.width: 10
+
+bps_pad_summary <- data |>
+  filter(bps_name %in% top_bps) |>
+  group_by(bps_name, pad_cats) |>
+  summarize(acres = sum(raw_acres, na.rm = TRUE), .groups = "drop") |>
+  tidyr::complete(
+    bps_name,
+    pad_cats = 1:4,
+    fill = list(acres = 0)
+  ) |>
+  group_by(bps_name) |>
+  mutate(
+    total_acres = sum(acres)
+  ) |>
+  ungroup() |>
+  mutate(
+    pad_cats = factor(pad_cats, levels = 1:4)
+  )
+
+
+plot <-
+  ggplot(
+    bps_pad_summary,
+    aes(
+      x = forcats::fct_reorder(bps_name, total_acres),
+      y = acres,
+      fill = pad_cats
+    )
+  ) +
+  geom_bar(stat = "identity", position = "stack") +
+  coord_flip() +
+  labs(
+    title = "Protection Status of top 10 BpSs",
+    subtitle = "",
+    caption = "Data from landfire.gov.",
+    x = "",
+    y = "Acres",
+    fill = "Status"
+  ) +
+  scale_x_discrete(labels = function(x) stringr::str_wrap(x, 30)) +
+  scale_y_continuous(labels = comma) +
+  scale_fill_manual(values = c(
+    "#f5922f", # orange
+    "#532a66", # purple
+    "#827c75", # grey
+    "#f5eb2f"  # yellow
+  )) +
+  theme_bw() +
+  theme(
+    plot.caption = element_text(hjust = 0, face = "italic"),
+    plot.title.position = "plot",
+    plot.caption.position = "plot"
+  )
+
+plot
+``
+
+
+
+# make interactive
+# plotly <- ggplotly(plot, height = 1720, width = 1000)  
+# 
+# 
+# plotly
+
+```
+
+
+
+
+# Succession classes reference vs. present
+
+
+
+```{r}
+
+# 1) current observed data
+current_data <- data |>
+  select(count, bps_model, bps_name, label) |>
+  unite(model_label, c("bps_model", "label"), remove = FALSE) |>
+  group_by(bps_model, model_label, label, bps_name) |>
+  summarise(count = sum(count), .groups = "drop") |>
+  group_by(bps_model) |>
+  mutate(
+    bps_total = sum(count),
+    current_percent = round(count / bps_total * 100)
+  ) |>
+  ungroup()
+
+# get list of bps_model values for aoi
+
+top_bps_models <- current_data |>
+  select(bps_model, bps_name) |>
+  filter(bps_name %in% top_bps) |>
+  group_by(bps_name, bps_model) 
+
+
+#2) aoi ref con
+
+aoi_ref_con <- ref_con |>
+  filter(bps_model %in% top_bps_models$bps_model) |>
+  select(model_label, ref_percent)
+
+#3) scls ref and current
+
+scls_data <- aoi_ref_con |>
+  left_join(current_data, by = "model_label")
+
+
+
+
+
+
+
+```
+
+
+
+
+
+## Historical disturbance rates per BpS
+
+
+```{r}
+#| label: disturbances
+#| echo: false
+#| message: false
+#| warning: false
+#| fig.height: 12
+#| fig.width: 10
+
+
+
+
+# 1) define the bps set (top 10 by acres)
+top_bps <- bps_name_df$bps_name
+
+# 2) define the transition set you want to show (keeps 7 bars consistent)
+#    you can hard-code your preferred order here if you want.
+trans_levels <- bps_transitions |>
+  filter(bps_name %in% top_bps) |>
+  distinct(transition) |>
+  arrange(transition) |>
+  pull(transition)
+
+# if you truly always want exactly 7 named transitions, do this instead:
+# trans_levels <- c("Surface Fire", "Mixed Fire", "Replacement Fire", "Insects", "Disease", "Wind", "Competition or Maintenance")
+
+# 3) summarize: avg across model_codes within bps_name x transition
+bps_trans_plot <- bps_transitions |>
+  filter(bps_name %in% top_bps) |>
+  mutate(pct_disturbed_yr = annual_probability * 100) |>
+  group_by(bps_name, transition) |>
+  summarize(
+    pct_disturbed_yr = mean(pct_disturbed_yr, na.rm = TRUE),
+    n_models = n(),
+    .groups = "drop"
+  ) |>
+  # 4) ensure every bps_name has every transition (fills missing with 0)
+  tidyr::complete(
+    bps_name = top_bps,
+    transition = trans_levels,
+    fill = list(pct_disturbed_yr = 0, n_models = 0)
+  ) |>
+  # 5) bring acres in for facet ordering (optional but nice)
+  left_join(bps_name_df, by = "bps_name") |>
+  mutate(
+    # order facets by acres (largest at top if you want: use -acres)
+    bps_name = forcats::fct_reorder(bps_name, acres),
+    # order bars within facet
+    transition = factor(transition, levels = rev(trans_levels))
+  )
+
+# 6) plot: facets = bps_name, bars = transition, x = percent/yr
+ggplot(bps_trans_plot, aes(x = pct_disturbed_yr, y = transition)) +
+  geom_col(width = 0.75) +
+facet_wrap(
+  ~ bps_name,
+  ncol = 2,
+  scales = "free_y",
+  labeller = labeller(bps_name = label_wrap_gen(width = 35))) +
+  scale_x_continuous(
+    labels = label_percent(scale = 1),
+    expand = expansion(mult = c(0, 0.05))) +
+  labs(
+    x = "percent of bps disturbed per year (mean across model codes)",
+    y = NULL
+  ) +
+  theme_bw(base_size = 14) +
+  theme(
+    strip.text = element_text(hjust = 0),
+    panel.grid.minor = element_blank()
+  )
+
+
+```
+
+
