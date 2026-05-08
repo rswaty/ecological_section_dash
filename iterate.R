@@ -1,17 +1,34 @@
 
 
-
 library(tidyverse)
 
-forests <- unique(data$forestname)
+data <- read_csv("inputs/combine_raw.csv")
 
 
-# try to outputs
-purrr::map(
-  .x = forests,  # vector of param values
-  .f = ~rmarkdown::render(
-    input = "demo_report.qmd",  # RMarkdown filepath
-    params = list(forestname = .x),  # iterated parameter value
-    output_file = stringr::str_glue("output/", .x, "-report.html")  # iterated output path
-  )
+
+slugify <- function(x) {
+  x <- tolower(x)
+  x <- gsub("[^a-z0-9]+", "_", x)
+  x <- gsub("^_+|_+$", "", x)
+  x
+}
+
+sections <- unique(data$MAP_UNIT_N)
+
+dir.create("reports", showWarnings = FALSE)
+
+purrr::walk(
+  sections,
+  function(sec) {
+    
+    out_file <- paste0(slugify(sec), "-report.html")
+    
+    cmd <- sprintf(
+      'quarto render demo_report.qmd --no-project -P map_unit_n="%s" --output %s --output-dir reports',
+      sec,
+      out_file
+    )
+    
+    system(cmd)
+  }
 )

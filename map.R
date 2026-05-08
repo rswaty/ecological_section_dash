@@ -6,35 +6,38 @@ library(ggplot2)
 library(rmapshaper)
 library(rnaturalearth)
 
-# read and project sections
+# output folder
+out_dir <- file.path("locator_maps")
+dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
+
+# filename helper: deterministic + filesystem safe
+slugify <- function(x) {
+  x <- tolower(x)
+  x <- gsub("[^a-z0-9]+", "_", x)
+  x <- gsub("^_+|_+$", "", x)
+  x
+}
+
+# read and project ecological sections
 sections <- st_read("inputs/sections.shp", quiet = TRUE) %>%
   st_transform(5070)
 
-# simplify sections
+# simplify for lightweight rendering
 sections_simp <- ms_simplify(
   sections,
   keep = 0.05,
   keep_shapes = TRUE
 )
 
-# focal section
-section_name <- "Okanogan Highland"
-
-section_sel <- sections_simp %>%
-  filter(MAP_UNIT_N == section_name)
-
-stopifnot(nrow(section_sel) == 1)
-
-# states (geometry-only, very light)
+# state boundaries (lines only)
 states <- ne_states(
   country = "united states of america",
   returnclass = "sf"
 ) %>%
   st_transform(5070) %>%
-  ms_simplify(keep = 0.02, keep_shapes = TRUE) %>%
   st_geometry()
 
-# lakes
+# lakes (optional but you already pull them; helps Great Lakes orientation)
 lakes <- ne_download(
   scale = 50,
   type = "lakes",
@@ -44,51 +47,79 @@ lakes <- ne_download(
   st_transform(5070) %>%
   ms_simplify(keep = 0.03, keep_shapes = TRUE)
 
-# zoomed extent with generous padding
-bb <- st_bbox(section_sel)
-pad_x <- (bb["xmax"] - bb["xmin"]) * 2.0
-pad_y <- (bb["ymax"] - bb["ymin"]) * 2.0
+# fixed US-wide extent (your approach)
+bb <- st_bbox(sections_simp)
 
-xlim <- c(bb["xmin"] - pad_x, bb["xmax"] + pad_x)
-ylim <- c(bb["ymin"] - pad_y, bb["ymax"] + pad_y)
+# function that returns your locator map for one selected section
+make_locator_plot <- function(section_sel) {
+  ggplot() +
+    geom_sf(
+      data = lakes,
+      fill = "#d6e9f5",
+      color = NA
+    ) +
+    geom_sf(
+      data = sections_simp,
+      fill = "grey95",
+      color = NA
+    ) +
+    geom_sf(
+      data = states,
+      color = "grey75",
+      linewidth = 0.25
+    ) +
+    geom_sf(
+      data = section_sel,
+      fill = "#5e8568",
+      color = "#4d4d4d",
+      linewidth = 0.7
+    ) +
+    coord_sf(
+      xlim = bb[c("xmin", "xmax")],
+      ylim = bb[c("ymin", "ymax")],
+      datum = NA,
+      expand = FALSE
+    ) +
+    theme_void() +
+    theme(
+      panel.background = element_rect(fill = "grey98", color = NA),
+      plot.margin = margin(6, 6, 14, 6)
+    )
+}
 
-# locator map
-ggplot() +
-  geom_sf(
-    data = lakes,
-    fill = "#d0e6f2",
-    color = NA
-  ) +
-  geom_sf(
-    data = sections_simp,
-    fill = "grey94",
-    color = "white",
-    linewidth = 0.2
-  ) +
-  geom_sf(
-    data = states,
-    color = "grey70",
-    linewidth = 0.40
-  ) +
-  geom_sf(
-    data = section_sel,
-    fill = "#3690c0",
-    color = "black",
-    linewidth = 1.0
-  ) +
-  coord_sf(
-    xlim = xlim,
-    ylim = ylim,
-    datum = NA,
-    expand = FALSE
-  ) +
-  labs(title = section_name) +
-  theme_void() +
-  theme(
-    plot.title = element_text(
-      size = 12,
-      face = "bold",
-      hjust = 0
-    ),
-    plot.margin = margin(5, 5, 20, 5)
+# generate one jpg per MAP_UNIT_N
+map_names <- sort(unique(sections_simp$MAP_UNIT_N))
+
+# optional lookup table for debugging / joining later
+lookup <- data.frame(
+  MAP_UNIT_N = map_names,
+  slug = slugify(map_names),
+  file = paste0(slugify(map_names), ".jpg"),
+  stringsAsFactors = FALSE
+)
+
+for (nm in map_names) {
+  section_sel <- sections_simp %>%
+    filter(MAP_UNIT_N == nm)
+  
+  # if there are unexpected duplicates, skip safely
+  if (nrow(section_sel) != 1) next
+  
+  outfile <- file.path(out_dir, paste0(slugify(nm), ".jpg"))
+  
+  p <- make_locator_plot(section_sel)
+  
+  # ggsave is the standard way to save ggplots; JPEG tends to be smaller than PNG for maps [2](https://ggplot2.tidyverse.org/reference/ggsave.html)
+  ggsave(
+    filename = outfile,
+    plot = p,
+    device = "jpeg",
+    width = 10.5,
+    height = 4.2,
+    units = "in",
+    dpi = 150,
+    quality = 85
   )
+}
+
+write.csv(lookup, file.path(out_dir, "locator_map_lookup.csv"), row.names = FALSE)

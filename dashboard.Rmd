@@ -1,5 +1,5 @@
 ---
-title: "LANDFIRE Powered Historical Fire Regime Reports"
+title: "Ecological Sections Report"
 output: 
   flexdashboard::flex_dashboard:
     orientation: columns
@@ -16,22 +16,39 @@ library(flexdashboard)
 library(leaflet)
 library(sf)
 library(tidyverse)
+
 ```
 
 
 ```{r data prep, message=FALSE, warning=FALSE, include=FALSE}
-#  read shape
-shp <- st_read("inputs/sections.shp") 
 
-%>% 
-  st_transform(crs = 4326) %>%
-  arrange(FORESTNAME)
+# read and prep shape
+shp <- st_read("inputs/sections.shp") |>
+  st_transform(4326) |>
+  arrange(MAP_UNIT_N)
 
-paths <- list.files('output', pattern = '.html', all.files = TRUE, full.names = TRUE) %>%
-  sort()
-  
+# list report files once
+report_files <- list.files(
+  "reports",
+  pattern = "\\.html$",
+  full.names = FALSE
+)
 
-shp <- cbind(shp, paths)
+# build reports lookup table
+reports <- tibble(
+  MAP_UNIT_N = report_files |>
+    tools::file_path_sans_ext() |>
+    (\(x) gsub("_", " ", x))() |>
+    trimws(),
+  path = file.path("reports", report_files)
+)
+
+# join reports onto spatial object
+shp <- shp |>
+  left_join(reports, by = "MAP_UNIT_N")
+
+
+
 ```
 
 
@@ -42,28 +59,32 @@ shp <- cbind(shp, paths)
 
 ```{r clickable map, echo=FALSE, message=FALSE, warning=FALSE, fig.width=16, fig.height=10}
 
-
-leaflet(shp) %>%
-  addProviderTiles(providers$CartoDB.Positron) %>%
-  addPolygons(color = "#404241", weight = 1, smoothFactor = 0.5,
-    opacity = 1.0, fillOpacity = 0.5,
+leaflet(shp) |>
+  addProviderTiles(providers$CartoDB.Positron) |>
+  addPolygons(
+    color = "#404241",
+    weight = 1,
+    smoothFactor = 0.5,
+    opacity = 1,
+    fillOpacity = 0.1,
     fillColor = "#0b631a",
-    highlightOptions = highlightOptions(color = "white", weight = 3,
-      bringToFront = TRUE),
-    popup = paste0( "For report"
-                 , shp$FORESTNAME
-                 , "<br>"
-                 , "<a href='"
-                 , shp$paths
-                 , "' target='_blank'>"
-                 , "Click Here</a>"
-               )
-    
-    
-    
-    
-    
+    highlightOptions = highlightOptions(
+      color = "white",
+      weight = 3,
+      bringToFront = TRUE
+    ),
+    popup = ifelse(
+      is.na(shp$path),
+      paste0(
+        "<b>", shp$MAP_UNIT_N, "</b><br>",
+        "no report available yet"
+      ),
+      paste0(
+        "<b>", shp$MAP_UNIT_N, "</b><br>",
+        "<a href='", shp$path, "' target='_blank'>open report</a>"
+      )
     )
+  )
 
 
 ```
@@ -74,19 +95,6 @@ Column {.sidebar data-width=500}
 -----------------------------------------------------------------------
 <b><font  size="4em" color="#000000">Exploring Historical Fire Regimes with LANDFIRE data</font></b>  
 
+Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque faucibus ex sapien vitae pellentesque sem placerat. In id cursus mi pretium tellus duis convallis. Tempus leo eu aenean sed diam urna tempor. Pulvinar vivamus fringilla lacus nec metus bibendum egestas. Iaculis massa nisl malesuada lacinia integer nunc posuere. Ut hendrerit semper vel class aptent taciti sociosqu. Ad litora torquent per conubia nostra inceptos himenaeos.
 
-Curious about the historical fire regimes and to practice using parameterized reports in R, I put together this simple dashboard using US Forest Service admin boundaries (https://data.fs.usda.gov/geodata/edw/datasets.php?dsetCategory=boundaries) and LANDFIRE's Biophysical Settings Data (https://landfire.gov/vegetation/bps).  
-
-A few fun facts emerged when summarizing for the top most representative BpSs for each forest:
-
-* There was an average of over 750,000 acres of fire each year prior to European Colonization within the forests of Region 9
-* Midewin National Tallgrass Prairie had the most fire with over 143,000 acres per year
-* The forests dominated by northern hardwoods, such as the Ottawa had fire as well (~8,000ac), though less than those to the south. 
-
-**Click on the forest to get a link to a custom report**
-
-![](conus_mfri.jpg){width=100%}
-
-Map of historical Mean Fire Return Invervals made with LANDFIRE Biophysical Settings data (https://landfire.gov/vegetation/bps).
-
-
+Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque faucibus ex sapien vitae pellentesque sem placerat. In id cursus mi pretium tellus duis convallis. Tempus leo eu aenean sed diam urna tempor. Pulvinar vivamus fringilla lacus nec metus bibendum egestas. Iaculis massa nisl malesuada lacinia integer nunc posuere. Ut hendrerit semper vel class aptent taciti sociosqu. Ad litora torquent per conubia nostra inceptos himenaeos.
