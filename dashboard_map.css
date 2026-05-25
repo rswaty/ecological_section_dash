@@ -1,0 +1,28 @@
+/* Overrides flexdashboard defaults — map column only */
+.dashboard-columns .dashboard-column:last-child,
+.dashboard-columns .dashboard-column:last-child .dashboard-column-inner,
+section.map-column,
+section.map-column .chart-wrapper,
+section.map-column .chart-wrapper .chart-stage,
+.map-panel-fill,
+.map-panel-fill .html-widget,
+.map-panel-fill .girafe,
+.map-panel-fill .girafe_container_std {
+  background: #f0f2f5 !important;
+  background-color: #f0f2f5 !important;
+}
+
+.map-panel-fill .girafe {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+.map-panel-fill .girafe_container_std {
+  width: 100% !important;
+  text-align: left !important;
+}
+
+.map-panel-fill svg.girafe-svg,
+.map-panel-fill svg {
+  background-color: #f0f2f5 !important;
+}
