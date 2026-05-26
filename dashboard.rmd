@@ -1,0 +1,224 @@
+---
+title: "Ecological Sections Dashboard"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+    css: dashboard_map.css
+    theme: 
+      version: 4
+      bootswatch: flatly
+    
+    
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(htmltools)
+library(sf)
+library(tidyverse)
+library(ggplot2)
+library(ggiraph)
+library(tigris)
+
+knitr::opts_chunk$set(echo = FALSE)
+
+options(tigris_use_cache = TRUE)
+
+if (!requireNamespace("ggiraph", quietly = TRUE)) {
+  stop(
+    "Package 'ggiraph' is required. Install with: install.packages('ggiraph')",
+    call. = FALSE
+  )
+}
+
+htmltools::tagList(
+  htmltools::tags$style(HTML("
+    /* fill the map column (wide column on the right) */
+    section.map-column,
+    section.map-column .chart-wrapper,
+    section.map-column .chart-stage,
+    .vertical-layout-fill .map-column .chart-wrapper,
+    .vertical-layout-fill .map-column .chart-stage {
+      flex: 1 1 auto;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      background-color: #f0f2f5 !important;
+    }
+    .map-panel-fill {
+      flex: 1 1 auto;
+      width: 100%;
+      min-height: calc(100vh - 120px);
+      height: calc(100vh - 120px);
+      background-color: #f0f2f5;
+    }
+    .map-panel-fill .html-widget,
+    .map-panel-fill .girafe,
+    .map-panel-fill .girafe_container_std {
+      width: 100% !important;
+      height: 100% !important;
+      max-width: none !important;
+      background-color: #f0f2f5 !important;
+    }
+    .map-panel-fill svg.girafe-svg {
+      width: 100% !important;
+      height: 100% !important;
+    }
+  "))
+)
+```
+
+
+```{r data prep, message=FALSE, warning=FALSE, include=FALSE}
+
+shp <- st_read("inputs/sections.shp", quiet = TRUE) |>
+  st_transform(5070) |>
+  arrange(MAP_UNIT_N) |>
+  filter(!grepl("water", MAP_UNIT_N, ignore.case = TRUE))
+
+report_files <- list.files(
+  "reports",
+  pattern = "\\.html$",
+  full.names = FALSE
+)
+
+reports <- tibble(
+  MAP_UNIT_N = report_files |>
+    tools::file_path_sans_ext() |>
+    (\(x) gsub("_", " ", x))() |>
+    trimws(),
+  path = file.path("reports", report_files)
+)
+
+shp <- shp |>
+  left_join(reports, by = "MAP_UNIT_N") |>
+  mutate(
+    has_report = !is.na(path),
+    onclick = ifelse(
+      has_report,
+      paste0("window.open(\"./", path, "\",\"_blank\");"),
+      "alert(\"No report available yet for this section.\");"
+    ),
+    tooltip = paste0(
+      "<b>", MAP_UNIT_N, "</b>",
+      ifelse(has_report, "<br><i>Click to open report</i>", "<br><i>No report yet</i>")
+    )
+  )
+
+states_map <- tigris::states(cb = TRUE, progress_bar = FALSE) |>
+  st_as_sf() |>
+  st_transform(5070) |>
+  st_filter(shp, .predicate = st_intersects)
+
+```
+
+
+Column {.sidebar data-width=500}
+-----------------------------------------------------------------------
+<b><font  size="4em" color="#000000">Ecosystem Representation Assessment Support Tool using LANDFIRE and PAD data </font></b>  
+
+<font size="4">
+This tool has been developed by Nature Conservancy's LANDFIRE staff with oversight by the Forest Stewardship Council US and review by a diverse set of stakeholders.  Its purpose is to support FSC US Forest Management certificate holders with assessments related to Criterion 6.5 and Representative Sample Areas (RSA) requirements within the FSC US Forest Stewardship Standard (FSS V2.0). 
+
+<br>
+
+
+</font>
+
+<b><font  size="4em" color="#000000">Hover over an Ecological Section to access custom report.  </font></b>  
+
+
+
+Column {data-width=900 .map-column}
+-----------------------------------------------------------------------
+
+<font size="6"> Ecological Sections of The Lower 48 States (Cleland et al. 2017).  </font>
+
+```{r clickable map, echo=FALSE, message=FALSE, warning=FALSE}
+
+map_plot <- ggplot() +
+  geom_sf(
+    data = states_map,
+    fill = "#424345",
+    color = "black",
+    linewidth = 0.3
+  ) +
+  geom_sf_interactive(
+    data = shp,
+    aes(tooltip = tooltip, onclick = onclick),
+    fill = "#f0f2f5",
+    color = "#f0f2f5",
+    linewidth = 0.15,
+    alpha = 0.25
+  ) +
+  coord_sf(crs = 5070, expand = TRUE) +
+  theme_void() +
+  theme(
+    panel.background = element_rect(fill = "#f0f2f5", color = NA),
+    plot.background = element_rect(fill = "#f0f2f5", color = NA)
+  )
+
+map_widget <- girafe(ggobj = map_plot, width_svg = 16, height_svg = 9) |>
+  girafe_options(
+    opts_zoom(min = 0.5, max = 10),
+    opts_toolbar(position = "topright"),
+    opts_hover(css = "stroke:#ffffff;stroke-width:2;cursor:pointer;"),
+    opts_hover_inv(css = "fill-opacity:0.35;"),
+    opts_selection(type = "none"),
+    opts_sizing(rescale = TRUE)
+  )
+
+map_widget$sizingPolicy$browser$fill <- TRUE
+map_widget$sizingPolicy$browser$padding <- 0
+map_widget$sizingPolicy$knitr$figure <- FALSE
+map_widget$sizingPolicy$knitr$defaultWidth <- "100%"
+map_widget$sizingPolicy$knitr$defaultHeight <- 720
+
+map_widget <- htmlwidgets::onRender(
+  map_widget,
+  "
+  function(el, x) {
+    var bg = '#f0f2f5';
+    function paintBg(node) {
+      if (!node || !node.style) return;
+      node.style.setProperty('background-color', bg, 'important');
+      node.style.setProperty('background', bg, 'important');
+    }
+    paintBg(el);
+    var p = el.parentElement;
+    while (p) {
+      paintBg(p);
+      if (p.tagName === 'SECTION' || p.classList.contains('dashboard-column')) break;
+      p = p.parentElement;
+    }
+    var svg = el.querySelector('svg');
+    if (svg) {
+      paintBg(svg);
+      svg.querySelectorAll('rect').forEach(function(r) {
+        var f = (r.getAttribute('fill') || '').toLowerCase();
+        if (f === '#ffffff' || f === 'white' || f === '#fcfcfc') {
+          r.setAttribute('fill', bg);
+        }
+      });
+    }
+
+    function resizeMap() { window.dispatchEvent(new Event('resize')); }
+    setTimeout(resizeMap, 50);
+    if (window.jQuery) {
+      jQuery(document).one('flexdashboard:layoutcomplete', function() {
+        paintBg(el);
+        resizeMap();
+      });
+    }
+  }
+  "
+)
+
+htmltools::tags$div(
+  class = "map-panel-fill",
+  style = "background-color: #f0f2f5 !important;",
+  map_widget
+)
+
+```

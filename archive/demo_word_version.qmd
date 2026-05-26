@@ -1,0 +1,659 @@
+---
+title: "Ecosystems Assessment: `r params$map_unit_n` Ecological Section"
+author: "Randy Swaty"
+date: "`r Sys.Date()`"
+format:
+  docx:
+    toc: true
+    toc-depth: 3
+params:
+  map_unit_n: "Okanogan Highland"
+---
+
+
+
+```{r setup, message=FALSE, warning=FALSE, include=FALSE}
+
+library(janitor)
+library(tidyverse)
+library(stringr)
+library(scales)
+library(viridis)
+library(tidytext)
+library(viridis)
+
+section <- if (exists("params") && !is.null(params$map_unit_n)) {
+  params$map_unit_n
+} else {
+  "Okanogan Highland"
+}
+
+# Read and wrangle raw data ----
+
+## read in and minor wrangle data for vdep and bps x gap (which may not be used, but original code is set this way so keeping)
+
+bps_remove_groups <- c(
+  "Barren-Rock/Sand/Clay",
+  "Fill-NoData",
+  "Fill-Not Mapped",
+  "Open Water",
+  "Perennial Ice/Snow",
+  "Sparse"
+)
+
+bps_scls_gap <- read.csv("inputs/bps_scl_gap_sections.csv") |>
+  clean_names() |>
+  filter(map_unit_n == section) |>
+  filter(!groupveg %in% bps_remove_groups) |>
+  mutate(raw_acres = round(count * 0.2223945)) |>
+  mutate(across(everything(), ~replace(., . == -9999, 0)))
+
+bps_transitions <- read.csv('inputs/bps_transitions.csv')
+
+ref_con <- read.csv("inputs/ref_con_long.csv") |>
+  rename(bps_model = model_code)
+
+## read in data for evt-gap protected status-keeping only natural veg
+
+evt_remove_phys <- c(
+  "Open Water",
+  "Sparsely Vegetated",
+  "Developed-Roads",
+  "Developed",
+  "Developed-Medium Intensity",
+  "Developed-Low Intensity",
+  "Developed-High Intensity",
+  "Quarries-Strip Mines-Gravel Pits-Well and Wind Pads",
+  "Agricultural",
+  "Snow-Ice",
+  "Fill-NoData",
+  "Exotic Herbaceous",
+  "Exotic Tree-Shrub"
+)
+
+evt_gap_status <- read.csv("inputs/evt_gap_sections.csv") |>
+clean_names() |>
+  filter(map_unit_n == section) |>
+  filter(!evt_phys %in% evt_remove_phys) |>
+  mutate(acres = round(count * 0.2223945)) |>
+  mutate(across(everything(), ~replace(., . == -9999, 0))) 
+
+top_evt_names <- evt_gap_status |>
+  group_by(evt_name) |>
+  summarize(total_acres = sum(acres, na.rm = TRUE), .groups = "drop") |>
+  arrange(desc(total_acres)) |>
+  slice_head(n = 10) |>
+  pull(evt_name)
+
+evt_gap_status_top10 <- evt_gap_status |>
+  filter(evt_name %in% top_evt_names)
+
+## read in data for bps to evt comparison chart
+
+bps_evt <- read.csv("inputs/bps_evt_sections.csv") |>
+  clean_names() |>
+  filter(map_unit_n == section)
+
+
+
+bps_evt_top50 <- head(bps_evt, n = 50)
+ write.csv(bps_evt_top50, file = "bps_evt_top_50.csv")
+
+
+# prep data for bps bar chart
+bps_name_df <- bps_scls_gap |>
+  group_by(bps_name) |>
+  summarize(acres = sum(raw_acres)) |>
+  arrange(desc(acres)) |>
+  top_n(n = 10, wt = acres)
+
+# prep data for disturbances chart
+
+top_bps <- bps_name_df$bps_name
+
+bps_trans_filt <- bps_transitions |>
+  filter(bps_name %in% top_bps)
+
+bps_trans_summarized <- bps_trans_filt |>
+  mutate(pct_disturbed_yr = annual_probability * 100) |>
+  group_by(bps_name, transition) |>
+  summarize(
+    pct_disturbed_yr = mean(pct_disturbed_yr, na.rm = TRUE),
+    n_models = n(),        # optional but useful for QA
+    .groups = "drop"
+  )
+
+
+bps_trans_plot <- bps_trans_summarized |>
+  left_join(bps_name_df, by = "bps_name") |>
+  mutate(
+    bps_name = fct_reorder(bps_name, acres)
+  )
+
+
+# data for summary bullets
+
+top_bps_name <- bps_name_df |>
+  slice_max(acres, n = 1) |>
+  pull(bps_name)
+
+top_bps_acres <- bps_name_df |>
+  slice_max(acres, n = 1) |>
+  pull(acres)
+
+
+number_of_bps <- length(unique(bps_scls_gap$bps_name))
+
+
+slugify <- function(x) {
+  x <- tolower(x)
+  x <- gsub("[^a-z0-9]+", "_", x)
+  x <- gsub("^_+|_+$", "", x)
+  x
+}
+
+locator_img <- file.path(
+  "locator_maps",
+  paste0(slugify(params$map_unit_n), ".jpg")
+)
+
+stopifnot(file.exists(locator_img))
+
+
+
+```
+
+
+## Location and Background
+
+![](`r locator_img`){width=65%}
+
+In order to better understand the the quantity of historical ecosystems, their protection status, ecological condition and natural disturbance regimes at a landscape scale, we summarized [LANDFIRE](https://landfire.gov/) and GAP data to [Ecological Sections](https://data-usfs.hub.arcgis.com/datasets/usfs::ecological-sections-feature-layer/explore?location=36.958550%2C-95.780300%2C4).  These summaries are coarse, aimed at setting context and setting the stage for structured analysis of more local management areas. This report features the ecological section at the right. 
+
+
+
+**Key Concepts about the input data from LANDFIRE:**
+
+* The [Biophysical Settings (BpS)](https://landfire.gov/vegetation/bps) data represents the "habitat" of an ecosystem, based on abiotic factors such as soils, surficial geology, slope, elevation and aspect, plus the current climate.  Each BpS has a reference document that describes how it looked and functioned prior to European colonization and a state-and-transition model that estimates how much of each "Succession Class" (see below) would have occurred within the habitat based on best approximations of the natural disturbance regime (refered to below as 'reference').  The BpSs are based on NatureServe's [Ecological Systems](https://landfire.gov/data-downloads/documents/PCom_2003_Ecol_Systems_US.pdf). 
+* [Succession Classes (s-class)](https://landfire.gov/vegetation/sclass) are essentially developmental and/or structural stages.  There are up to 5 defined for each BpS and are based on lifeform (e.g., broadleaf or needleleaf), and ranges of canopy cover (e.g., 70-80%) and canopy height (e.g., 10-25M ).  In addition to modeled estimates of reference percents of each SCL, succession classes are mapped across the US today so that we can compare reference to current amounts.
+* [Existing Vegetation Type (EVT)](https://landfire.gov/vegetation/evt) data represents current distribution of NatureServe's Ecological Systems.  Note-because of subsequent review and improvement, BpS and EVT names and lists for particular places may not always match.  
+
+**Two ways to compare reference to historical ecosystems with LANDFIRE data**
+
+> First way: exploring succession class percents.  This method uses the BpS data to establish the ecosystem habitat, BpS models to estimate reference percentages of each succession class then the succesion class spatial data to quantify current amounts of each s-class.  You might get a result that reads such as "within the northern pine-oak BpS there was 17% of class A in the reference period, 10% today".  This is the way LANDFIRE was designed to compare reference and current.
+
+
+> Second way: comparing the BpS and EVT data.  With this method we essentially "stack" the two datasets so that each pixel gets a label for what was there during the reference period and a label for what is there currently.  Because the BpS and EVT datasets were not designed to work this way, we are conservative, presenting the topmost BpSs by area, and using "coarse" EVT labels.  For example when looking at change for a "Ponderosa Pine" BpS, we might use "Conifer" for the EVT instead of "Rocky Mountain Mixed-Coniferous" for a pixel or collection of pixels. This helps ensure that not too much detail is read into the BpS -  EVT comparisons below. 
+
+
+## Summary
+
+From a rapid assessment of the Biophysical Settings for **`r section`** we found:
+
+* There were **`r number_of_bps`** Biophysical Settings (by name, there may be more if counting by variants).  The **`r top_bps_name`** was the most prevalent overall.
+* Blah blah blah add more bold facts
+
+## Explorations using the Biophysical Settings and Succession Class Datasets 
+
+### Amount of the most prevelant Biophysical Settings 
+
+```{r}
+#| label: bps chart
+#| echo: false
+#| message: false
+#| warning: false
+#| fig.height: 10
+#| fig.width: 10
+
+# plot
+bps_name_chart <- 
+  ggplot(bps_name_df, aes(x = bps_name, y = acres)) +
+  geom_bar(stat = "identity", fill = "#5e8568") +
+  labs(
+    subtitle = "Represents dominant vegetation systems pre-European colonization",
+    caption = "Data from landfire.gov.",
+    x = "",
+    y = "Acres") +
+  scale_x_discrete(limits = rev(bps_name_df$bps_name),
+                   labels = function(x) str_wrap(x, width = 18)) +
+  scale_y_continuous(labels = comma) +
+  coord_flip() +
+  theme_bw(base_size = 12) +
+  theme(panel.grid = element_blank())
+
+
+bps_name_chart
+
+
+```
+
+
+
+### Succession Classes: Reference vs. Present
+
+Succession classes essentially represent structural stages, defined by ranges of upper-layer canopy cover, height and lifeform (and in some cases leaf form, needle vs. broadleaf).  Definitions vary from ecosystem to ecosystem-see table below and BpS descriptions for specifics. 
+
+```{r}
+#| label: sclass chart
+#| echo: false
+#| message: false
+#| warning: false
+#| fig.height: 14
+#| fig.width: 10
+
+
+# 1) current observed data
+current_data <- bps_scls_gap |>
+  select(count, bps_model, bps_name, label) |>
+  unite(model_label, c("bps_model", "label"), remove = FALSE) |>
+  group_by(bps_model, model_label, label, bps_name) |>
+  summarise(count = sum(count), .groups = "drop") |>
+  group_by(bps_model) |>
+  mutate(
+    bps_total = sum(count),
+    current_percent = round(count / bps_total * 100)
+  ) |>
+  ungroup() |>
+  select(-(label))
+
+# get list of bps_model values for aoi
+
+top_bps_models <- current_data |>
+  select(bps_model, bps_name) |>
+  filter(bps_name %in% top_bps) |>
+  group_by(bps_name, bps_model) 
+
+
+#2) aoi ref con
+
+aoi_ref_con <- ref_con |>
+  filter(bps_model %in% top_bps_models$bps_model) |>
+  select(model_label, ref_percent, ref_label) |>
+  filter(!endsWith(model_label, "_Water")) |>
+  rename(label = ref_label)
+
+
+#3) scls ref and current
+
+
+scls_data <- aoi_ref_con |>
+  left_join(current_data, by = "model_label") |>
+  mutate(across(ends_with("percent"), ~ replace_na(.x, 0)))
+
+
+scls_data <- aoi_ref_con |>
+  left_join(current_data, by = "model_label") |>
+  mutate(across(ends_with("percent"), ~ replace_na(.x, 0))) |>
+  mutate(
+    bps_model = if_else(
+      is.na(bps_model),
+      sub("_[^_]+$", "", model_label),
+      bps_model
+    )
+  ) |>
+  group_by(bps_model) |>
+  mutate(
+    bps_name  = coalesce(bps_name, first(na.omit(bps_name))),
+    bps_total = coalesce(bps_total, first(na.omit(bps_total))),
+    count     = replace_na(count, 0)
+  ) |>
+  ungroup() |>
+  mutate(
+    facet_label = paste0(bps_name, " (", bps_model, ")")
+  )
+
+
+scls_data <- scls_data |>
+    pivot_longer(
+    cols = c(`ref_percent`, `current_percent`),
+    names_to = "ref_cur",
+    values_to = "percent" )
+
+
+
+# 4) Order succession class factor on x-axis ----
+scls_data$label <- factor(scls_data$label, levels = c(
+  "Developed",
+  "Agriculture",
+  "UE",
+  "UN",
+  "E",
+  "D",
+  "C",
+  "B",
+  "A"
+))
+
+# ---- 3) Plot ----
+sclasplot <-
+  ggplot(scls_data, aes(fill = factor(ref_cur), y = percent, x = label)) +
+  geom_col(width = 0.8, position = position_dodge()) +
+  coord_flip() +
+  scale_x_discrete(limits = levels(scls_data$label)) +
+  labs(
+    title = "Succession Classes past and present",
+    subtitle = "Top BpSs selected for illustration. Not all succession classes present in all BpSs",
+    caption = "\nData from landfire.gov.",
+    x = "",
+    y = "Acres"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.caption = element_text(hjust = 0, face = "italic"),
+    plot.title.position = "plot",
+    plot.caption.position = "plot",
+    panel.spacing = unit(.05, "lines"),
+    panel.border = element_rect(color = "black", fill = NA, size = 1),
+    strip.background = element_rect(color = "black", size = 1),
+    strip.text = element_text(margin = margin(4, 6, 4, 6))
+  ) +
+  scale_fill_manual(
+    values = c("#375eb3", "#5e8568"),  # present (grey), past (green)
+    name = " ",
+    labels = c("Present", "Past")
+  ) +
+  facet_wrap(
+    ~ facet_label,
+    ncol = 3,
+    labeller = label_wrap_gen(width = 25)  # wraps on normal spaces; NBSP keeps ", 14%" together
+  ) +
+  scale_y_continuous(labels = comma)
+
+sclasplot
+
+
+
+
+
+```
+
+
+
+### Historical Disturbance Rates per BpS
+
+In order to estimate historical amounts of succession classes, LANDFIRE used state and transition modeling.  The transitions in this context are natural disturbances.  By multiplying the modeled annual probability by the mapped amount of an BpS, we can estimate annual disturbance amounts. 
+
+
+```{r}
+#| label: disturbances
+#| echo: false
+#| message: false
+#| warning: false
+#| fig.height: 12
+#| fig.width: 10
+
+
+
+
+# 1) define the bps set (top 10 by acres)
+top_bps <- bps_name_df$bps_name
+
+# 2) define the transition set you want to show (keeps 7 bars consistent)
+#    you can hard-code your preferred order here if you want.
+trans_levels <- bps_transitions |>
+  filter(bps_name %in% top_bps) |>
+  distinct(transition) |>
+  arrange(transition) |>
+  pull(transition)
+
+# if you truly always want exactly 7 named transitions, do this instead:
+# trans_levels <- c("Surface Fire", "Mixed Fire", "Replacement Fire", "Insects", "Disease", "Wind", "Competition or Maintenance")
+
+# 3) summarize: avg across model_codes within bps_name x transition
+bps_trans_plot <- bps_transitions |>
+  filter(bps_name %in% top_bps) |>
+  mutate(pct_disturbed_yr = annual_probability * 100) |>
+  group_by(bps_name, transition) |>
+  summarize(
+    pct_disturbed_yr = mean(pct_disturbed_yr, na.rm = TRUE),
+    n_models = n(),
+    .groups = "drop"
+  ) |>
+  # 4) ensure every bps_name has every transition (fills missing with 0)
+  tidyr::complete(
+    bps_name = top_bps,
+    transition = trans_levels,
+    fill = list(pct_disturbed_yr = 0, n_models = 0)
+  ) |>
+  # 5) bring acres in for facet ordering (optional but nice)
+  left_join(bps_name_df, by = "bps_name") |>
+  mutate(
+    # order facets by acres (largest at top if you want: use -acres)
+    bps_name = forcats::fct_reorder(bps_name, acres),
+    # order bars within facet
+    transition = factor(transition, levels = rev(trans_levels))
+  )
+
+# 6) plot: facets = bps_name, bars = transition, x = percent/yr
+ggplot(bps_trans_plot, aes(x = pct_disturbed_yr, y = transition)) +
+  geom_col(width = 0.75) +
+facet_wrap(
+  ~ bps_name,
+  ncol = 2,
+  scales = "free_y",
+  labeller = labeller(bps_name = label_wrap_gen(width = 35))) +
+  scale_x_continuous(
+    labels = label_percent(scale = 1),
+    expand = expansion(mult = c(0, 0.05))) +
+  labs(
+    x = "percent of bps disturbed per year (mean across model codes)",
+    y = NULL
+  ) +
+  theme_bw(base_size = 14) +
+  theme(
+    strip.text = element_text(hjust = 0),
+    panel.grid.minor = element_blank()
+  )
+
+
+```
+
+
+
+
+
+
+
+
+## Explorations focused on the Existing Vegetation Type Datasets
+
+### Protected area status
+
+Below we assessed GAP protection level for each of the top 10 EVTs after removing agricultural, developed and ruderal categories. 
+
+
+The GAP status codes are defined as (copied from [https://www.usgs.gov/programs/gap-analysis-project/gap-status-code-frequently-asked-questions-faq](https://www.usgs.gov/programs/gap-analysis-project/gap-status-code-frequently-asked-questions-faq)) 
+
+
+**Gap Status 1:** An area having permanent protection from conversion of natural land cover and a mandated management plan in operation to maintain a natural state within which disturbance events (of natural type, frequency, intensity, and legacy) are allowed to proceed without interference or are mimicked through management.
+
+**Gap Status 2:** An area having permanent protection from conversion of natural land cover and a mandated management plan in operation to maintain a primarily natural state, but which may receive uses or management practices that degrade the quality of existing natural communities, including suppression of natural disturbance.
+
+**Gap Status 3:** An area having permanent protection from conversion of natural land cover for the majority of the area, but subject to extractive uses of either a broad, low intensity type (for example, logging, Off-Highway Vehicle recreation) or localized intense type (for example, mining). It also confers protection to federally listed endangered and threatened species throughout the area.
+
+**Gap Status 4:** There are no known public or private institutional mandates, or legally recognized easements or deed restrictions held by the managing entity to prevent conversion of natural habitat types to anthropogenic habitat types. The area generally allows conversion to unnatural land cover throughout or management intent is unknown.
+
+
+
+```{r}
+#| label: protected area
+#| echo: false
+#| message: false
+#| warning: false
+#| fig.height: 10
+#| fig.width: 10
+
+evt_pad_summary <- evt_gap_status_top10 |>
+  group_by(evt_name, gap_sts) |>
+  summarize(acres = sum(acres, na.rm = TRUE), .groups = "drop") |>
+  tidyr::complete(
+    evt_name,
+    gap_sts = 1:4,
+    fill = list(acres = 0)
+  ) |>
+  group_by(evt_name) |>
+  mutate(
+    total_acres = sum(acres)
+  ) |>
+  ungroup() |>
+  mutate(
+    gap_sts = factor(gap_sts, levels = 1:4)
+  )
+
+
+plot <-
+  ggplot(
+    evt_pad_summary,
+    aes(
+      x = forcats::fct_reorder(evt_name, total_acres),
+      y = acres,
+      fill = gap_sts
+    )
+  ) +
+  geom_bar(stat = "identity", position = "stack") +
+  coord_flip() +
+  labs(
+    title = "Protection Status of top 10 EVTs",
+    subtitle = "",
+    caption = "Data from LANDFIRE and the US Geological Survey",
+    x = "",
+    y = "Acres",
+    fill = "GAP Status"
+  ) +
+  scale_x_discrete(labels = function(x) stringr::str_wrap(x, 30)) +
+  scale_y_continuous(labels = comma) +
+  scale_fill_manual(values = c(
+    "#66788E", # blue
+    "#532a66", # purple
+    "#D5D5D5", # grey
+    "#FECF49"  # yellow
+  )) +
+  theme_bw(base_size = 14) +
+  theme(
+    plot.caption = element_text(hjust = 0, face = "italic"),
+    plot.title.position = "plot",
+    plot.caption.position = "plot"
+  ) +
+  theme(panel.grid = element_blank())
+
+
+plot
+
+
+
+
+# make interactive
+# plotly <- ggplotly(plot, height = 1720, width = 1000)  
+# 
+# 
+# plotly
+
+```
+
+
+
+
+
+### Comparing BpS to EVT
+
+STATIC TO REPLACE DYNAMIC SANKEY FLOW CHART
+
+```{r}
+#| label: bps to evt
+#| echo: false
+#| message: false
+#| warning: false
+#| fig.width: 10
+#| fig.height: 10
+#| fig.cap: "Composition of Existing Vegetation Types (EVT) within the three most prevalent Biophysical Settings."
+
+library(dplyr)
+library(ggplot2)
+library(scales)
+library(stringr)
+
+evt_colors <- c(
+  "Conifer"      = "#4b7054",
+  "Hardwood"     = "#70fa91",
+  "Shrubland"    = "#7f4e79",
+  "Grassland"    = "#f0c571",
+  "Riparian"     = "#0b81a2",
+  "Exotics"      = "#e25759",
+  "Agricultural" = "#f0c571",
+  "Developed"    = "#c8c8c8"
+)
+
+# normalize EVT categories
+bps_evt_norm <- bps_evt |>
+  mutate(
+    evt_phys = case_when(
+      evt_phys %in% c("Exotic Herbaceous", "Exotic Tree-Shrub") ~ "Exotics",
+      evt_phys == "Agricultural"                               ~ "Agricultural",
+      evt_phys == "Developed"                                  ~ "Developed",
+      grepl("^Developed", evt_phys)                            ~ "Developed",
+      grepl("Quarries|Strip Mines|Gravel", evt_phys)           ~ "Developed",
+      evt_phys == "Sparsely Vegetated"                         ~ NA_character_,
+      TRUE ~ evt_phys
+    )
+  ) |>
+  filter(!is.na(evt_phys))
+
+# identify top 3 BpSs
+top_bps <- bps_evt_norm |>
+  group_by(bps_name) |>
+  summarise(total_count = sum(count), .groups = "drop") |>
+  arrange(desc(total_count)) |>
+  slice_head(n = 3)
+
+# summarize EVT composition
+bps_evt_summary <- bps_evt_norm |>
+  semi_join(top_bps, by = "bps_name") |>
+  group_by(bps_name, evt_phys) |>
+  summarise(count = sum(count), .groups = "drop") |>
+  group_by(bps_name) |>
+  mutate(
+    pct = count / sum(count),
+    bps_label = paste0(
+      str_wrap(bps_name, 45),
+      " (",
+      percent(sum(count) / sum(top_bps$total_count), accuracy = 1),
+      ")"
+    )
+  ) |>
+  ungroup()
+
+# plot
+ggplot(
+  bps_evt_summary,
+  aes(x = pct, y = evt_phys, fill = evt_phys)
+) +
+  geom_col(width = 0.75) +
+  facet_wrap(
+    ~ bps_label,
+    ncol = 1,
+    labeller = label_wrap_gen(width = 55)
+  ) +
+  scale_x_continuous(
+    labels = percent,
+    expand = expansion(mult = c(0, 0.05))
+  ) +
+  scale_fill_manual(values = evt_colors) +
+  labs(
+    x = "Percent of Biophysical Setting",
+    y = "",
+    fill = "Existing Vegetation Type"
+  ) +
+  theme_bw(base_size = 12) +
+  theme(
+    panel.grid.minor = element_blank(),
+    strip.text = element_text(hjust = 0),
+    legend.position = "bottom"
+  )
+
+
+```
+
+
+
+
+
