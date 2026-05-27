@@ -138,12 +138,9 @@ evt_pad_summary <- evt_gap_status_top10 |>
 
 
 
-### evt bullets
-number_evt <- length(unique(evt_gap_status$evt_name))
 
-top_evt <- evt_gap_status_top10 |>
-  slice_max(acres, n = 1) |>
-  pull(evt_name)
+
+
 
 
 ## read in data for bps to evt comparison chart
@@ -189,20 +186,7 @@ bps_trans_plot <- bps_trans_summarized |>
   )
 
 
-# data for summary bullets
-
-top_bps_name <- bps_name_df |>
-  slice_max(acres, n = 1) |>
-  pull(bps_name)
-
-top_bps_acres <- bps_name_df |>
-  slice_max(acres, n = 1) |>
-  pull(acres)
-
-
-number_of_bps <- length(unique(bps_scls_gap$bps_name))
-
-
+## for map?
 slugify <- function(x) {
   x <- tolower(x)
   x <- gsub("[^a-z0-9]+", "_", x)
@@ -216,6 +200,51 @@ locator_img <- file.path(
 )
 
 stopifnot(file.exists(locator_img))
+
+
+### evt bullets
+number_evt <- length(unique(evt_gap_status$evt_name))
+
+top_evt <- evt_gap_status_top10 |>
+  slice_max(acres, n = 1) |>
+  pull(evt_name)
+
+
+total_count_evt <- sum(bps_evt$count, na.rm = TRUE)
+
+evt_top10_pct <- bps_evt %>%
+  group_by(evt_name) %>%
+  summarise(count = sum(count, na.rm = TRUE), .groups = "drop") %>%
+  arrange(desc(count)) %>%
+  slice_head(n = 10) %>%
+  summarise(pct = round(sum(count) / total_count_evt * 100)) %>%
+  pull(pct)
+
+# data for bps summary bullets
+
+top_bps_name <- bps_name_df |>
+  slice_max(acres, n = 1) |>
+  pull(bps_name)
+
+top_bps_acres <- bps_name_df |>
+  slice_max(acres, n = 1) |>
+  pull(acres)
+
+
+number_of_bps <- length(unique(bps_scls_gap$bps_name))
+
+
+total_count_bps <- sum(bps_evt$count, na.rm = TRUE)
+
+bps_top10_pct <- bps_evt %>%
+  group_by(bps_name) %>%
+  summarise(count = sum(count, na.rm = TRUE), .groups = "drop") %>%
+  arrange(desc(count)) %>%
+  slice_head(n = 10) %>%
+  summarise(pct = round(sum(count) / total_count_bps * 100)) %>%
+  pull(pct)
+
+bps_top10_pct
 
 
 
@@ -248,7 +277,14 @@ This tool primarily helps with elements of Indicator 6.5.1, and may additionally
 
 This first section helps to identify the native ecosystems that should occur in the landscape given the existing climate and soil conditions (an essential element of Indicator 6.5.1), as well as ecosystems that are currently present within the landscape. Importantly, these assessments only cover the top 10 most prevalent ecosystems.  Additionally, this section also provides tables of the top 3 ecosystem types that should occur given historic data broken down to identify percentage remaining or converted to currently present ecosystems.
 
-We quantified Native Ecosystems using LANDFIRE's (Biophysical Settings)[https://landfire.gov/vegetation/bps] data and Existing Ecosystems using LANDFIRE's (Existing Vegetation Type-Ecological Systems)[https://landfire.gov/vegetation/evt] data.  See more about these datasets in "Key Concepts" section below. 
+
+
+
+::: {.callout-note}
+We quantified Native Ecosystems using LANDFIRE's [Biophysical Settings](https://landfire.gov/vegetation/bps) data and Existing Ecosystems using LANDFIRE's [Existing Vegetation Type-Ecological Systems](https://landfire.gov/vegetation/evt) data.  See more about these datasets in "Key Concepts" section below. 
+
+Due to evolution of methods and naming conventions the ecosystem names between the Native and Existing ecosystem charts may be different. 
+:::
 
 ### Native Ecosystems
 
@@ -315,6 +351,25 @@ evt_name_chart
 
 
 ```
+
+<br>
+
+::: {.callout-tip}
+## Native and Existing Ecosystems
+
+For this Ecological System:
+
+* There were **`r number_of_bps`** Biophysical Settings (by name, there may be more if counting by variants).  The **`r top_bps_name`** was the most prevalent overall.  The top 10 Native Ecosystems presented here covered **`r bps_top10_pct`%** of the total area. 
+* Currently LANDFIRE maps **`r number_evt`** Existing Vegetation Types with the **`r top_evt`** being most dominant for this Ecological Section.  The top 10 Existing Ecosystems cover **`r evt_top10_pct`%** of the total area. 
+
+
+:::
+
+
+
+
+
+
 
 ### Flow chart: Composition of Existing Ecosystems within the three most prevalent Native Ecosystem footprints
 
@@ -765,13 +820,6 @@ facet_wrap(
 
 
 
-
-
-## Summary
-
-
-* There were **`r number_of_bps`** Biophysical Settings (by name, there may be more if counting by variants).  The **`r top_bps_name`** was the most prevalent overall.
-* Currently LANDFIRE maps **`r number_evt`** Existing Vegetation Types with the **`r top_evt`** being most dominant for this Ecological Section.
 
 
 ## Key Concepts about the input data from LANDFIRE:
