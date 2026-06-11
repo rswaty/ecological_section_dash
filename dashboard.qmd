@@ -17,12 +17,7 @@ library(tigris)
 knitr::opts_chunk$set(echo = FALSE)
 options(tigris_use_cache = TRUE)
 
-if (!requireNamespace("ggiraph", quietly = TRUE)) {
-  stop(
-    "Package 'ggiraph' is required. Install with: install.packages('ggiraph')",
-    call. = FALSE
-  )
-}
+
 ```
 
 ```{r map_css, echo=FALSE, results='asis'}
@@ -52,27 +47,27 @@ svg.girafe-svg {
 ```
 
 ```{r data prep, message=FALSE, warning=FALSE, include=FALSE}
-shp <- st_read("inputs/sections.shp", quiet = TRUE) |>
+shp <- st_read("inputs/sections_2025.shp", quiet = TRUE) |>
   st_transform(5070) |>
-  arrange(MAP_UNIT_N) |>
-  filter(!grepl("water", MAP_UNIT_N, ignore.case = TRUE))
+  arrange(SECTION_NA) |>
+  filter(!grepl("water", SECTION_NA, ignore.case = TRUE))
 
 report_files <- list.files(
-  "reports",
+  "reports_2025",
   pattern = "\\.html$",
   full.names = FALSE
 )
 
 reports <- tibble(
-  MAP_UNIT_N = report_files |>
+  SECTION_NA = report_files |>
     tools::file_path_sans_ext() |>
     (\(x) gsub("_", " ", x))() |>
     trimws(),
-  path = file.path("reports", report_files)
+  path = file.path("reports_2025", report_files)
 )
 
 shp <- shp |>
-  left_join(reports, by = "MAP_UNIT_N") |>
+  left_join(reports, by = "SECTION_NA") |>
   mutate(
     has_report = !is.na(path),
     onclick = ifelse(
@@ -81,7 +76,7 @@ shp <- shp |>
       "alert(\"No report available yet for this section.\");"
     ),
     tooltip = paste0(
-      "<b>", MAP_UNIT_N, "</b>",
+      "<b>", SECTION_NA, "</b>",
       ifelse(has_report, "<br><i>Click to open report</i>", "<br><i>No report yet</i>")
     )
   )
@@ -150,7 +145,14 @@ map_widget
 
 This tool has been developed by [The Nature Conservancy's LANDFIRE staff](https://storymaps.arcgis.com/stories/f37983671094430ebd23035596deccb6) with oversight by the [Forest Stewardship Council US](https://us.fsc.org/) and review by a diverse set of stakeholders. Its purpose is to support FSC US Forest Management certificate holders with assessments related to Criterion 6.5 and Representative Sample Areas (RSA) requirements within the FSC US Forest Stewardship Standard (FSS V2.0).
 
-The Ecological Sections here are from [Cleland et al. (2017)](https://data-usfs.hub.arcgis.com/datasets/usfs::ecological-sections-feature-layer/explore?location=36.958550%2C-95.780300%2C4), and serve as 'landscapes' within Annex G, Representative Sample Areas.  Input ecosystems data for the analyses comes from the [LANDFIRE](https://landfire.gov/) program, and protected status from US Geological Survey's [Protected Areas Database](https://www.usgs.gov/programs/gap-analysis-project/science/pad-us-data-overview). 
+Ecological Sections as originally defined by Cleland et al. (2017) then refined in 2025 (USDA Forest Service, shown here) are referenced in Annex G of the FSC US FSS V2.0 as an appropriate scale by which "landscape level" assessments for the purposes of RSA establishment may be made. This tool provides several broad scale assessments for each landscape (or Ecological Section) through generating a report that may be used by certificate holders as a first step towards meeting requirements related to RSAs. Importantly, the data used to generate these reports is designed for large scale use, and the assessments provided only cover very broad aspects of the requirements related to RSAs. 
+ 
+Input ecosystems data comes from the LANDFIRE program, and input protected status data comes from US Geological Survey’s Protected Areas Database. Additional research and consultation with local experts or finer-scaled data will still be necessary for conformance with requirements of Criterion 6.5 of the FSC US FSS. 
+
+
+
+
+The Ecological Sections (2025 version) are from [the USDA Forest Service](https://data.fs.usda.gov/geodata/edw/datasets.php?xmlKeyword=sections), and serve as 'landscapes' within Annex G, Representative Sample Areas.  Input ecosystems data for the analyses comes from the [LANDFIRE](https://landfire.gov/) program, and protected status from US Geological Survey's [Protected Areas Database](https://www.usgs.gov/programs/gap-analysis-project/science/pad-us-data-overview). 
 
 **Click the Ecological Section of interest to access custom report.**
 
@@ -169,18 +171,18 @@ The Ecological Sections here are from [Cleland et al. (2017)](https://data-usfs.
 
 # Resources  {orientation="columns" scrolling="false"}
 
+Learn about and download the revised Forest Stewardship Standard for the US at [https://us.fsc.org/forest-management/revised-fscr-us-forest-stewardship-standard-v2](https://us.fsc.org/forest-management/revised-fscr-us-forest-stewardship-standard-v2).
+
 <h2>LANDFIRE Products Used</h2>
 
 * [Biophysical Settings Spatial Data](https://landfire.gov/vegetation/bps): BpS data represents the vegetation that may have been dominant on the landscape prior to European colonization of North America and is based on both the current biophysical environment and an approximation of the historical disturbance regime
 * [Reference Conditions Table](https://landfire.gov/vegetation/bps-models): Reference Conditions table is a tool used to describe the historical conditions of ecosystems, including vegetation types, fire regimes, and ecological processes
-* [Existing Vegetation Cover (EVC)](https://landfire.gov/vegetation/evc): Existing Vegetation Cover (EVC) - represents the vertically projected percent cover of the live canopy layer for a 30-m cell
-* [Existing Vegetation Height (EVH)](https://landfire.gov/vegetation/evh): Existing Vegetation Height (EVH) - represents the average height of the dominant vegetation for a 30-m cell
-* [Existing Vegetation Type](https://landfire.gov/vegetation/evt): Existing Vegetation Type (EVT) - represents the current distribution of the terrestrial ecological systems classification, developed by NatureServe for the western hemisphere, through 2016
-* [Succession Classes](https://landfire.gov/vegetation/sclass): Succession Class data categorizes current vegetation composition and structure into different successional classes based on the Biophysical Settings model
+* [Existing Vegetation Type](https://landfire.gov/vegetation/evt): Existing Vegetation Type (EVT) - represents the current distribution of the terrestrial ecological systems classification, developed by NatureServe for the western hemisphere.
+* [Succession Classes](https://landfire.gov/vegetation/sclass): Succession Class data categorizes current vegetation composition and structure into different successional classes based on the Biophysical Settings model.
 
 <h2>Other Inputs</h2>
 
-* [Ecological Sections Data (Cleland et al., 2017)](https://data-usfs.hub.arcgis.com/datasets/usfs::ecological-sections-feature-layer/explore?location=36.958550%2C-95.780300%2C4).  Ecological polygons used in dashboard to stratify the coterminous US for analysys and report generation.
+* [Ecological Sections Data (USDA Forest Service)](https://data.fs.usda.gov/geodata/edw/datasets.php?xmlKeyword=sections).  Ecological polygons used in dashboard to stratify the coterminous US for analysys and report generation.  Formal citation: USDA Forest Service, 2025. EcoMap 2025: Ecological Sections and Subsections for the Conterminous United States. Washington, DC: US Department of Agriculture, Forest Service, Natural Resources and Geospatial Office. 
 * [US Geological Survey Protected Areas Database](https://www.usgs.gov/programs/gap-analysis-project/science/pad-us-data-overview).  Data used to quantify levels of protection per Existing Ecosystem within each Ecological Section. 
 
 
