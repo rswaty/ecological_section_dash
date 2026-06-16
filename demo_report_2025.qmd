@@ -362,6 +362,10 @@ top_bps_summary <- bps_evt_norm %>%
 
 bps_name_number <- read_csv("inputs/bps_model_number_name.csv")
 
+sclass_descriptions <- read_csv("inputs/scls_descriptions.csv")
+
+
+
 
 
 
@@ -792,11 +796,16 @@ Understanding successional class data for the native ecosystems in your landscap
 
 ### Reference and Current Succession Class Amounts for top Native Ecosystems
 
-We quantified Native Ecosystems using LANDFIRE's (Biophysical Settings)[https://landfire.gov/vegetation/bps]  spatial data, "reference" succession class amounts from LANDFIRE's (Biophysical Settings Models)[https://landfire.gov/vegetation/bps-models], and current amounts of each succession class using LANDFIRE's (Succession Class)[https://landfire.gov/vegetation/sclass]spatial data. See more about these datasets in "Key Concepts" section below. 
+We quantified Native Ecosystems using LANDFIRE's [Biophysical Settings](https://landfire.gov/vegetation/bps)  spatial data, "reference" succession class amounts from LANDFIRE's [Biophysical Settings Models](https://landfire.gov/vegetation/bps-models), and current amounts of each succession class using LANDFIRE's (Succession Class)[https://landfire.gov/vegetation/sclass]spatial data. See more about these datasets in "Key Concepts" section below. 
 
-*We selected the top 10 Native Ecosystems for the charts below.  Most Native Ecosystems have 'variants' representing different reference conditions (e.g., different successional stages and amounts).  Therefore there may be more than 10 charts below.*
+**About the charts that follow:**
 
-*Native Ecosystem (i.e., LANDFIRE Biophysical Settings) descriptions and succession class definitions presented at bottom of report)*
+* We selected the top 10 Native Ecosystems by their unique numerical code for the charts below.  Most Native Ecosystems have 'variants' representing different reference conditions (e.g., different successional stages and amounts).  Therefore there may be multiple charts per BpS name, and each Native Ecosystem in the 'Native Ecosystems' chart above may not have a chart below.
+* Native Ecosystem (i.e., LANDFIRE Biophysical Settings) descriptions and succession class definitions presented at bottom of report)
+* Because the succession classes are custom for each ecosystem the classes are labeled simply as A-E, plus:
+  * UN for "Uncharacteristic Native", or situations where the vegetation is native, but the structure (i.e., canopy cover and height) currently present was not defined as reference. 
+  * UE for "Uncharacteristic Exotic"
+  For descriptions of the classes see table below (and documents as well).
 
 
 ```{r}
@@ -825,10 +834,20 @@ current_data <- bps_scls_gap |>
 
 # get list of bps_model values for aoi
 
+## original way---too many bpss
+# top_bps_models <- current_data |>
+#   select(bps_model, bps_name) |>
+#   filter(bps_name %in% top_bps) |>
+#   group_by(bps_name, bps_model) 
+
+
 top_bps_models <- current_data |>
-  select(bps_model, bps_name) |>
-  filter(bps_name %in% top_bps) |>
-  group_by(bps_name, bps_model) 
+  distinct(bps_model, bps_total) %>%   # avoid duplicates across rows
+  arrange(desc(bps_total)) %>%
+  slice_head(n = 10)
+
+
+
 
 
 #2) aoi ref con
@@ -1038,5 +1057,111 @@ In order to better understand the the quantity of historical ecosystems, their p
 
 ## Native Ecosystem Descriptions and Succession Class Definitions
 
+To better understand 'reference' conditions for the Native Ecosystems of the US, the LANDFIRE program developed descriptions plus accompanying state-and-transition models that depict how these systems 'looked and functioned' with natural disturbance regimes.  Below you can download the descriptions for the dominant Native Ecosystems and explore the succession class descriptions in a table.
+
+LANDFIRE developed and delivers this information by Map Zone.  If an ecosystem crosses multiple Map Zones there may be multiple 'variants'.  In the table of links to the descriptions you will see "Model Codes", which represent an unique 5 digit code for the system followed by a list of Map Zones that description applies to.  
+
+
+![LANDFIRE Map Zones for the lower 48 states](images/conus_mzs.jpg)
+
+
+```{r}
+#| label: bps_urls
+#| echo: false
+#| message: false
+#| warning: false
+
+filtered_sclass <- sclass_descriptions |>
+  filter(bps_model %in% top_bps_models$bps_model) |>
+  left_join(bps_name_number, by = c("bps_model" = "model_code"))
+
+url_template <- "https://github.com/rswaty/bps_docs_parse/raw/main/all_bps_docs/10080_1_2_3_7.docx"
+
+bps_urls <- filtered_sclass %>%
+  distinct(bps_name, bps_model) %>%   # key line
+  mutate(
+    url = gsub("10080_1_2_3_7", bps_model, url_template),
+    link = paste0(
+      '<a href="', url, '" target="_blank">',
+      bps_name, ' (', bps_model, ')',
+      '</a>'
+    )
+  )
+
+datatable(
+  bps_urls %>% select(
+    `Native Ecosystem` = bps_name,
+    `Model Code` = bps_model,
+    `Document` = link
+  ),
+  escape = FALSE,
+  rownames = FALSE,
+  options = list(
+    dom = "flt",
+    pageLength = 10
+  )
+)
+
+
+
+```
+
+
+<br>
+<br>
+
+
+
+As noted above each Native Ecosystem has up to 5 succession classes, and each one has unique descriptions and mapping rules.  Those descriptions and mapping rules for the Native Ecosystems presented in the Succession Class Chart are presented below.
+
+```{r}
+#| label: s-class description table
+#| echo: false
+#| message: false
+#| warning: false
+
+
+
+
+
+
+filtered_sclass %>%
+  mutate(
+    sort_id = class_id
+  ) %>%
+  select(
+    `Native Ecosystem Name` = bps_name,
+    `BpS Model` = bps_model,
+    `Class label` = label,
+    `Short description` = class_id,
+    `Full description` = description,
+    sort_id
+  ) %>%
+  datatable(
+    rownames = FALSE,
+    options = list(
+      dom = "flt",
+      ordering = TRUE,
+      columnDefs = list(
+        list(visible = FALSE, targets = 5),                # hide sort col
+        list(width = "400px", targets = 4)                 # give description space
+      )
+    )
+  ) %>%
+  formatStyle(
+    columns = 1:4,
+    `text-align` = "left"
+  ) %>%
+  formatStyle(
+    columns = 5,
+    `text-align` = "left",
+    `white-space` = "normal"   # THIS is the key: allows wrapping
+  )
+
+
+
+
+
+```
 
 
