@@ -1,0 +1,189 @@
+---
+title: Ecological Sections Dashboard
+format:
+  dashboard:
+    vertical_layout: fill
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(htmltools)
+library(sf)
+library(tidyverse)
+library(ggplot2)
+library(ggiraph)
+library(tigris)
+
+knitr::opts_chunk$set(echo = FALSE)
+options(tigris_use_cache = TRUE)
+
+
+```
+
+```{r map_css, echo=FALSE, results='asis'}
+cat(' 
+<style>
+html, body, .dashboard-page, .dashboard-page-wrapper {
+  height: 100%;
+}
+.dashboard-column, .chart-wrapper, .chart-stage {
+  height: 100% !important;
+}
+.chart-stage {
+  display: flex !important;
+}
+.html-widget, .girafe, .girafe_container_std {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+}
+svg.girafe-svg {
+  width: 100% !important;
+  height: 100% !important;
+  display: block !important;
+}
+</style>
+')
+```
+
+```{r data prep, message=FALSE, warning=FALSE, include=FALSE}
+shp <- st_read("inputs/sections_2025.shp", quiet = TRUE) |>
+  st_transform(5070) |>
+  arrange(SECTION_NA) |>
+  filter(!grepl("water", SECTION_NA, ignore.case = TRUE))
+
+report_files <- list.files(
+  "reports_2025",
+  pattern = "\\.html$",
+  full.names = FALSE
+)
+
+reports <- tibble(
+  SECTION_NA = report_files |>
+    tools::file_path_sans_ext() |>
+    (\(x) gsub("_", " ", x))() |>
+    trimws(),
+  path = file.path("reports_2025", report_files)
+)
+
+shp <- shp |>
+  left_join(reports, by = "SECTION_NA") |>
+  mutate(
+    has_report = !is.na(path),
+    onclick = ifelse(
+      has_report,
+      paste0("window.open(\"./", path, "\",\"_blank\");"),
+      "alert(\"No report available yet for this section.\");"
+    ),
+    tooltip = paste0(
+      "<b>", SECTION_NA, "</b>",
+      ifelse(has_report, "<br><i>Click to open report</i>", "<br><i>No report yet</i>")
+    )
+  )
+
+states_map <- tigris::states(cb = TRUE, progress_bar = FALSE) |>
+  st_as_sf() |>
+  st_transform(5070) |>
+  st_filter(shp, .predicate = st_intersects)
+```
+
+# The Map {orientation="columns" scrolling="false"}
+
+## Column {width=70%}
+
+
+
+```{r clickable map, echo=FALSE, message=FALSE, warning=FALSE}
+map_plot <- ggplot() +
+  geom_sf(
+    data = states_map,
+    fill = "#424345",
+    color = "black",
+    linewidth = 0.3
+  ) +
+  geom_sf_interactive(
+    data = shp,
+    aes(tooltip = tooltip, onclick = onclick),
+    fill = "#f0f2f5",
+    color = "#f0f2f5",
+    linewidth = 0.15,
+    alpha = 0.25
+  ) +
+  coord_sf(crs = 5070, expand = TRUE) +
+  theme_void() +
+  theme(
+    panel.background = element_rect(fill = "#f0f2f5", color = NA),
+    plot.background = element_rect(fill = "#f0f2f5", color = NA),
+    plot.margin = margin(0, 0, 0, 0)
+  )
+
+map_widget <- girafe(
+  ggobj = map_plot,
+  width_svg = 14,
+  height_svg = 9
+) |>
+  girafe_options(
+    opts_zoom(min = 0.5, max = 10),
+    opts_toolbar(position = "topright"),
+    opts_hover(css = "stroke:#ffffff;stroke-width:2;cursor:pointer;"),
+    opts_hover_inv(css = "fill-opacity:0.35;"),
+    opts_selection(type = "none"),
+    opts_sizing(rescale = TRUE)
+  )
+
+map_widget$sizingPolicy$browser$fill <- TRUE
+map_widget$sizingPolicy$browser$padding <- 0
+map_widget$sizingPolicy$knitr$figure <- FALSE
+map_widget$sizingPolicy$knitr$defaultWidth <- "100%"
+
+map_widget
+```
+
+## Column {width=30%}
+
+<h3>Ecological Section Assessments for FSC</h3>
+
+This tool has been developed by [The Nature Conservancy's LANDFIRE staff](https://storymaps.arcgis.com/stories/f37983671094430ebd23035596deccb6) with oversight by the [Forest Stewardship Council US](https://us.fsc.org/) and review by a diverse set of stakeholders. Its purpose is to support FSC US Forest Management certificate holders with assessments related to Criterion 6.5 and Representative Sample Areas (RSA) requirements within the FSC US Forest Stewardship Standard (FSS V2.0).
+
+Ecological Sections as originally defined by Cleland et al. (2017) then refined in 2025 (USDA Forest Service, shown here) are referenced in Annex G of the FSC US FSS V2.0 as an appropriate scale by which "landscape level" assessments for the purposes of RSA establishment may be made. This tool provides several broad scale assessments for each landscape (or Ecological Section) through generating a report that may be used by certificate holders as a first step towards meeting requirements related to RSAs. Importantly, the data used to generate these reports is designed for large scale use, and the assessments provided only cover very broad aspects of the requirements related to RSAs. 
+ 
+Input ecosystems data comes from the LANDFIRE program, and input protected status data comes from US Geological Survey’s Protected Areas Database. Additional research and consultation with local experts or finer-scaled data will still be necessary for conformance with requirements of Criterion 6.5 of the FSC US FSS. 
+
+
+
+
+The Ecological Sections (2025 version) are from [the USDA Forest Service](https://data.fs.usda.gov/geodata/edw/datasets.php?xmlKeyword=sections), and serve as 'landscapes' within Annex G, Representative Sample Areas.  Input ecosystems data for the analyses comes from the [LANDFIRE](https://landfire.gov/) program, and protected status from US Geological Survey's [Protected Areas Database](https://www.usgs.gov/programs/gap-analysis-project/science/pad-us-data-overview). 
+
+**Click the Ecological Section of interest to access custom report.**
+
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+
+<div style="text-align: right; padding-top: 20px; padding-bottom: 50px;">
+![](images/logosall.png){width=80% fig-alt="LANDFIRE logo"}
+</div>
+
+
+
+# Resources  {orientation="columns" scrolling="false"}
+
+Learn about and download the revised Forest Stewardship Standard for the US at [https://us.fsc.org/forest-management/revised-fscr-us-forest-stewardship-standard-v2](https://us.fsc.org/forest-management/revised-fscr-us-forest-stewardship-standard-v2).
+
+<h2>LANDFIRE Products Used</h2>
+
+* [Biophysical Settings Spatial Data](https://landfire.gov/vegetation/bps): BpS data represents the vegetation that may have been dominant on the landscape prior to European colonization of North America and is based on both the current biophysical environment and an approximation of the historical disturbance regime
+* [Reference Conditions Table](https://landfire.gov/vegetation/bps-models): Reference Conditions table is a tool used to describe the historical conditions of ecosystems, including vegetation types, fire regimes, and ecological processes
+* [Existing Vegetation Type](https://landfire.gov/vegetation/evt): Existing Vegetation Type (EVT) - represents the current distribution of the terrestrial ecological systems classification, developed by NatureServe for the western hemisphere.
+* [Succession Classes](https://landfire.gov/vegetation/sclass): Succession Class data categorizes current vegetation composition and structure into different successional classes based on the Biophysical Settings model.
+
+<h2>Other Inputs</h2>
+
+* [Ecological Sections Data (USDA Forest Service)](https://data.fs.usda.gov/geodata/edw/datasets.php?xmlKeyword=sections).  Ecological polygons used in dashboard to stratify the coterminous US for analysys and report generation.  Formal citation: USDA Forest Service, 2025. EcoMap 2025: Ecological Sections and Subsections for the Conterminous United States. Washington, DC: US Department of Agriculture, Forest Service, Natural Resources and Geospatial Office. 
+* [US Geological Survey Protected Areas Database](https://www.usgs.gov/programs/gap-analysis-project/science/pad-us-data-overview).  Data used to quantify levels of protection per Existing Ecosystem within each Ecological Section. 
+
+
+
