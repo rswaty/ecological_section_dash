@@ -7,9 +7,9 @@ library(tidyverse)
 data <- read.csv("inputs/sections_2025.csv")
 
 sections <- unique(data$section_na)
-sections <- head(sections, 3)   # test run
+sections <- head(sections, 5)   # test run
 
-dir.create("reports_2025", showWarnings = FALSE)
+dir.create("reports", showWarnings = FALSE)
 
 reports <- sections |>
   tibble(section_na = _) |>
@@ -23,7 +23,7 @@ reports <- sections |>
     
     # render into working directory
     quarto::quarto_render(
-      input = "demo_report_2025.qmd",
+      input = "demo_report.qmd",
       execute_params = list(section_na = section_na),
       output_file = output_file
     )
@@ -31,7 +31,7 @@ reports <- sections |>
     # move to reports/ after render
     file.rename(
       from = output_file,
-      to   = file.path("reports_2025", output_file)
+      to   = file.path("reports", output_file)
     )
   })
 

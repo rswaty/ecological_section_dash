@@ -1,5 +1,5 @@
 ---
-title: Ecological Sections Dashboard
+title: RSA Landscapes Map
 format:
   dashboard:
     vertical_layout: fill
@@ -78,7 +78,7 @@ shp <- st_read("inputs/sections_2025.shp", quiet = TRUE) |>
   filter(!grepl("water", SECTION_NA, ignore.case = TRUE))
 
 report_files <- list.files(
-  "reports_2025",
+  "reports",
   pattern = "\\.html$",
   full.names = FALSE
 )
@@ -88,7 +88,7 @@ reports <- tibble(
     tools::file_path_sans_ext() |>
     (\(x) gsub("_", " ", x))() |>
     trimws(),
-  path = file.path("reports_2025", report_files)
+  path = file.path("reports", report_files)
 )
 
 shp <- shp |>
@@ -131,8 +131,8 @@ geom_sf(
 geom_sf_interactive(
   data = shp,
   aes(tooltip = tooltip, onclick = onclick),
-  fill = "#6fb747",
-  color = "#6fb747",
+  fill = "#78BE20",
+  color = "#78BE20",
   linewidth = 0.15,
   alpha = 0.10) +
   
@@ -168,7 +168,7 @@ map_widget
 
 ## Column {width=30%}
 
-<h3>Ecological Section Assessments for FSC</h3>
+<h3>Landscape-Scale Assessments for RSA Identification</h3>
 
 This tool has been developed by [The Nature Conservancy's LANDFIRE staff](https://storymaps.arcgis.com/stories/f37983671094430ebd23035596deccb6) with oversight by the [Forest Stewardship Council US](https://us.fsc.org/) and review by a diverse set of stakeholders. Its purpose is to support FSC US Forest Management certificate holders with assessments related to Criterion 6.5 and Representative Sample Areas (RSA) requirements within the FSC US Forest Stewardship Standard (FSS V2.0).
 
@@ -184,17 +184,13 @@ The Ecological Sections (2025 version) are from [the USDA Forest Service](https:
 **Click the Ecological Section of interest to access custom report.**
 
 <br>
-<br>
-<br>
-<br>
-<br>
-<br>
 
-<div style="text-align: right; padding-top: 20px; padding-bottom: 50px;">
+
+<div style="text-align: center; padding-top: 20px; padding-bottom: 50px;">
 ![](images/logosall.png){width=80% fig-alt="LANDFIRE logo"}
 </div>
 
-
+*FSC® licence code F000232*
 
 # Resources  {orientation="columns" scrolling="false"}
 

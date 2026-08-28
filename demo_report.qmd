@@ -1,6 +1,6 @@
 ---
-title: "Ecosystems Assessment: `r params$map_unit_n` Ecological Section"
-author: "Randy Swaty"
+title: "Ecosystems Assessment: `r params$section_na` Ecological Section"
+author: "Randy Swaty (rswaty@tnc.org)"
 date: "`r Sys.Date()`"
 format:
   html:
@@ -11,7 +11,7 @@ format:
     toc-depth: 3
     embed-resources: true
 params:
-  map_unit_n: "Okanogan Highland"
+  section_na: "Midwest Driftless Area"
 
 ---
 
@@ -28,11 +28,16 @@ library(viridis)
 library(DT)
 library(tidytext)
 library(viridis)
+library(gt)
+library(knitr)
+library(htmltools)
+library(kableExtra)
 
-section <- if (exists("params") && !is.null(params$map_unit_n)) {
-  params$map_unit_n
+
+section <- if (exists("params") && !is.null(params$section_na)) {
+  params$section_na
 } else {
-  "Okanogan Highland"
+  "Eastern Upper Peninsula"
 }
 
 # Read and wrangle raw data ----
@@ -48,9 +53,9 @@ bps_remove_groups <- c(
   "Sparse"
 )
 
-bps_scls_gap <- read.csv("inputs/bps_scl_gap_sections.csv") |>
+bps_scls_gap <- read.csv("inputs/bps_scl_gap_sections_2025.csv") |>
   clean_names() |>
-  filter(map_unit_n == section) |>
+  filter(section_na == section) |>
   filter(!groupveg %in% bps_remove_groups) |>
   mutate(raw_acres = round(count * 0.2223945)) |>
   mutate(across(everything(), ~replace(., . == -9999, 0)))
@@ -78,26 +83,43 @@ evt_remove_phys <- c(
   "Exotic Tree-Shrub"
 )
 
-evt_gap_status <- read.csv("inputs/evt_gap_sections.csv") |>
+evt_gap_status <- read.csv("inputs/evt_gap_sections_2025.csv") |>
 clean_names() |>
-  filter(map_unit_n == section) |>
+  filter(section_na == section) |>
   filter(!evt_phys %in% evt_remove_phys) |>
   mutate(acres = round(count * 0.2223945)) |>
   mutate(across(everything(), ~replace(., . == -9999, 0))) 
 
+## by top 10.  commented out august 28 to go with greater than 10k acres below
+# top_evt_names <- evt_gap_status |>
+#   group_by(evt_name) |>
+#   summarize(total_acres = sum(acres, na.rm = TRUE), .groups = "drop") |>
+#   arrange(desc(total_acres)) |>
+#   slice_head(n = 10) |>
+#   pull(evt_name)
+
+# evts with more than 1k acres
 top_evt_names <- evt_gap_status |>
   group_by(evt_name) |>
   summarize(total_acres = sum(acres, na.rm = TRUE), .groups = "drop") |>
+  filter(total_acres > 1000) |>
   arrange(desc(total_acres)) |>
-  slice_head(n = 10) |>
   pull(evt_name)
 
 evt_gap_status_top10 <- evt_gap_status |>
   filter(evt_name %in% top_evt_names)
 
-top_evt_names_df <- evt_gap_status_top10 |>
-  group_by(evt_name)|>
-  summarize(acres = sum(acres)) |>
+# filtered for top evts > 10k acres
+# top_evt_names_df <- evt_gap_status_top10 |>
+#   group_by(evt_name)|>
+#   summarize(acres = sum(acres)) |>
+#   arrange(desc(acres))
+
+# all EVTs filtered for top evts > 1k acres
+top_evt_names_df <- evt_gap_status |>
+  group_by(evt_name) |>
+  summarize(acres = sum(acres, na.rm = TRUE)) |>
+  filter(acres > 1000) |>
   arrange(desc(acres))
 
 
@@ -132,7 +154,7 @@ evt_pad_summary <- evt_gap_status_top10 |>
   dplyr::mutate(
     pct = dplyr::if_else(total_acres > 0, acres / total_acres, 0),
     pct_sum = dplyr::if_else(total_acres > 0, acres_1_3 / total_acres, 0),
-    evt_name = forcats::fct_reorder(evt_name, pct_sum),
+    evt_name = factor(evt_name, levels = top_evt_names_df$evt_name),
     gap_sts = factor(gap_sts, levels = 1:3)
   )
 
@@ -145,9 +167,9 @@ evt_pad_summary <- evt_gap_status_top10 |>
 
 ## read in data for bps to evt comparison chart
 
-bps_evt <- read.csv("inputs/bps_evt_sections.csv") |>
+bps_evt <- read.csv("inputs/bps_evt_sections_2025.csv") |>
   clean_names() |>
-  filter(map_unit_n == section)
+  filter(section_na == section)
 
 
 
@@ -158,9 +180,12 @@ bps_evt_top50 <- head(bps_evt, n = 50)
 # prep data for bps bar chart
 bps_name_df <- bps_scls_gap |>
   group_by(bps_name) |>
-  summarize(acres = sum(raw_acres)) |>
-  arrange(desc(acres)) |>
-  top_n(n = 10, wt = acres)
+  summarize(acres = sum(raw_acres, na.rm = TRUE)) |>
+  filter(acres > 1000) |>
+  arrange(desc(acres))
+
+# |>
+#   top_n(n = 10, wt = acres)
 
 # prep data for disturbances chart
 
@@ -196,7 +221,7 @@ slugify <- function(x) {
 
 locator_img <- file.path(
   "locator_maps",
-  paste0(slugify(params$map_unit_n), ".jpg")
+  paste0(slugify(params$section_na), ".jpg")
 )
 
 stopifnot(file.exists(locator_img))
@@ -248,168 +273,72 @@ bps_top10_pct
 
 
 
-```
-
-
-## Location and Background
-
-::: {.columns}
-
-::: {.column width="30%"}
-
-Principle 6 of the FSC US FSS aims to maximize positive environmental impacts and minimize adverse environmental impacts of management activities occurring within certified management units. Toward this desired outcome, Criterion 6.5 requires the identification and protection or restoration of native ecosystems that are not already adequately represented and protected in the landscape, defined here as the Ecological Section named above, and in the locator map to the right. 
-
-
-
-
-:::
-
-::: {.column width="70%"}
-![](`r locator_img`){fig-alt="Locator map for the ecological section"}
-:::
-:::
-
-This tool serves to support certificate holders with the requirements of Criterion 6.5 related to Representative Sample Areas, but importantly, does not ensure conformance. Additional information gathering and evaluation will most likely be required by certificate holders to ensure conformance with the elements of Criterion 6.5. It is not possible to establish a blanket measurement by which to determine “adequate” protection of all various and complex native ecosystems across the entirety of the conterminous US. 
-
-This tool primarily helps with elements of Indicator 6.5.1, and may additionally assist in conformance with Indicators 6.5.2 - 6.5.6. 
-
-## Native and Existing Vegetation Types
-
-This first section helps to identify the native ecosystems that should occur in the landscape given the existing climate and soil conditions (an essential element of Indicator 6.5.1), as well as ecosystems that are currently present within the landscape. Importantly, these assessments only cover the top 10 most prevalent ecosystems.  Additionally, this section also provides tables of the top 3 ecosystem types that should occur given historic data broken down to identify percentage remaining or converted to currently present ecosystems.
-
-
-
-
-::: {.callout-note}
-We quantified Native Ecosystems using LANDFIRE's [Biophysical Settings](https://landfire.gov/vegetation/bps) data and Existing Ecosystems using LANDFIRE's [Existing Vegetation Type-Ecological Systems](https://landfire.gov/vegetation/evt) data.  See more about these datasets in "Key Concepts" section below. 
-
-Due to evolution of methods and naming conventions the ecosystem names between the Native and Existing ecosystem charts may be different. 
-:::
-
-### Native Ecosystems
-
-```{r}
-#| label: bps chart
-#| echo: false
-#| message: false
-#| warning: false
-#| fig.height: 10
-#| fig.width: 10
-
-# plot
-bps_name_chart <- 
-  ggplot(bps_name_df, aes(x = bps_name, y = acres)) +
-  geom_bar(stat = "identity", fill = "#5e8568") +
-  labs(
-    subtitle = "",
-    caption = "Data from landfire.gov.",
-    x = "",
-    y = "Acres") +
-  scale_x_discrete(limits = rev(bps_name_df$bps_name),
-                   labels = function(x) str_wrap(x, width = 18)) +
-  scale_y_continuous(labels = comma) +
-  coord_flip() +
-  theme_bw(base_size = 12) +
-  theme(panel.grid = element_blank())
-
-
-bps_name_chart
-
-
-```
-
-
-### Existing Ecosystems - 2024
-
-
-```{r}
-#| label: evt chart
-#| echo: false
-#| message: false
-#| warning: false
-#| fig.height: 10
-#| fig.width: 10
-
-# plot
-evt_name_chart <- 
-  ggplot(top_evt_names_df, aes(x = evt_name, y = acres)) +
-  geom_bar(stat = "identity", fill = "#4f4f4f") +
-  labs(
-    subtitle = "",
-    caption = "Data from landfire.gov. Developed and agricultural types removed.",
-    x = "",
-    y = "Acres") +
-  scale_x_discrete(limits = rev(top_evt_names_df$evt_name),
-                   labels = function(x) str_wrap(x, width = 18)) +
-  scale_y_continuous(labels = comma) +
-  coord_flip() +
-  theme_bw(base_size = 12) +
-  theme(panel.grid = element_blank())
-
-
-evt_name_chart
-
-
-```
-
-<br>
-
-::: {.callout-tip}
-## Native and Existing Ecosystems
-
-For this Ecological System:
-
-* There were **`r number_of_bps`** Biophysical Settings (by name, there may be more if counting by variants).  The **`r top_bps_name`** was the most prevalent overall.  The top 10 Native Ecosystems presented here covered **`r bps_top10_pct`%** of the total area. 
-* Currently LANDFIRE maps **`r number_evt`** Existing Vegetation Types with the **`r top_evt`** being most dominant for this Ecological Section.  The top 10 Existing Ecosystems cover **`r evt_top10_pct`%** of the total area. 
-
-
-:::
 
 
 
 
 
+## ===== EVT protection summaries =====
+
+# GAP 1–3 (overall protection)
+low_protection_evts <- evt_pad_summary |>
+  distinct(evt_name, pct_sum) |>
+  arrange(pct_sum) |>
+  slice_head(n = 3) |>
+  mutate(
+    label = paste0(
+      evt_name,
+      " (",
+      scales::percent(pct_sum, accuracy = 1),
+      ")"
+    )
+  )
+
+low_evt_names <- paste(low_protection_evts$label, collapse = "; ")
+min_pct <- min(low_protection_evts$pct_sum, na.rm = TRUE)
+
+# GAP 1 (strict protection)
+low_gap1_evts <- evt_pad_summary |>
+  filter(gap_sts == "1") |>
+  distinct(evt_name, pct) |>
+  arrange(pct) |>
+  slice_head(n = 3) |>
+  mutate(
+    label = paste0(
+      evt_name,
+      " (",
+      scales::percent(pct, accuracy = 0.1),
+      ")"
+    )
+  )
+
+low_gap1_names <- paste(low_gap1_evts$label, collapse = "; ")
+
+min_gap1_pct <- min(low_gap1_evts$pct, na.rm = TRUE)
 
 
-### Flow chart: Composition of Existing Ecosystems within the three most prevalent Native Ecosystem footprints
+## for sankey
 
-For the charts below we assessed the amounts of each Existing Ecosystem (at a coarse level; includes agricultural and developed types) within each of the top 3 most prevalent Native Ecosystem footprints for this Ecological Section. 
-
-**Hover over the grey horizontal bands to explore how Native Ecosystems have split out on the current landscape.  Current percent of each Existing Ecosystem for this Ecological Section quantified in parentheses. **
-
-
-
-```{r}
-#| label: bps to evt
-#| echo: false
-#| message: false
-#| warning: false
-
-
-library(dplyr)
-library(plotly)
-library(scales)
-library(stringr)
-library(htmltools)
 
 evt_colors <- c(
-  "Conifer"      = "#4b7054",
-  "Hardwood"     = "#70fa91",
-  "Shrubland"    = "#7f4e79",
-  "Grassland"    = "#947d3e",
-  "Riparian"     = "#0b81a2",
-  "Exotics"      = "#e25759",
-  "Agricultural" = "#f0c571",
-  "Developed"    = "#c8c8c8"
+  "Conifer"      = "#00542D",
+  "Hardwood"     = "#B3D5A7",
+  "Shrubland"    = "#5E3D7F",
+  "Grassland"    = "#A4956E",
+  "Riparian"     = "#5688C7",
+  "Exotics"      = "#F15D50",
+  "Agricultural" = "#FFE772",
+  "Developed"    = "#999999"
 )
 
 groupveg_colors <- c(
-  "Conifer"   = "#4b7054",
-  "Hardwood"  = "#70fa91",
-  "Shrubland" = "#7f4e79",
-  "Grassland" = "#947d3e",
-  "Riparian"  = "#0b81a2"
+  "Conifer"   = "#00542D",
+  "Hardwood"  = "#B3D5A7",
+  "Shrubland" = "#5E3D7F",
+  "Grassland" = "#A4956E",
+  "Riparian"  = "#5688C7"
 )
+
 
 bps_evt_norm <- bps_evt %>%
   mutate(
@@ -435,6 +364,212 @@ top_bps_sankey <- bps_evt_norm %>%
     bps_label = paste0(str_wrap(bps_name, width = 55), " (", percent(bps_pct_total, accuracy = 1), ")"),
     bps_color = dplyr::coalesce(unname(groupveg_colors[groupveg]), "#c8c8c8")
   )
+## TABLE
+
+
+
+top_bps_summary <- bps_evt_norm %>%
+  filter(bps_name %in% top_bps) %>%
+  mutate(
+    natural_veg = !evt_phys %in% c("Developed", "Agricultural")
+  ) %>%
+  group_by(bps_name) %>%
+  summarise(
+    total_area = sum(count, na.rm = TRUE),
+    natural_area = sum(count[natural_veg], na.rm = TRUE),
+    converted_area = total_area - natural_area,
+    pct_natural_remaining = natural_area / total_area,
+    .groups = "drop"
+  ) %>%
+  arrange(desc(total_area))
+
+
+## Succession classes
+
+bps_name_number <- read_csv("inputs/bps_model_number_name.csv")
+
+sclass_descriptions <- read_csv("inputs/scls_descriptions.csv")
+
+
+
+
+
+
+
+
+
+
+
+```
+
+
+## Introduction
+
+::: {.columns}
+
+::: {.column width="30%"}
+
+Principle 6 of the [FSC US Forest Stewardship Standard (FSS)](https://us.fsc.org/forest-management/revised-fscr-us-forest-stewardship-standard-v2) aims to maximize positive environmental impacts and minimize adverse environmental impacts of management activities occurring within certified management units. Toward this desired outcome, Criterion 6.5 requires the identification and protection or restoration of native ecosystems that are not already adequately represented and protected in the landscape, defined here as the Ecological Section named above, and in the locator map to the right. 
+
+
+:::
+
+::: {.column width="70%"}
+![](`r locator_img`){fig-alt="Locator map for the ecological section"}
+:::
+:::
+
+This tool serves to support certificate holders with the requirements of Criterion 6.5 related to Representative Sample Areas (RSAs), but importantly, does not ensure conformance. Additional information gathering and evaluation will most likely be required by certificate holders to ensure conformance with the elements of Criterion 6.5. It is not possible to establish a blanket measurement by which to determine “adequate” protection of all various and complex native ecosystems across the entirety of the conterminous US. 
+
+This tool primarily helps with elements of Indicator 6.5.1 and may additionally assist in conformance with Indicators 6.5.2 - 6.5.6. It is deeply aligned with Annex G of the FSC US FSS, which provides guidance for identifying RSAs, as well as guidance for management and activities within RSAs and managing to restore more natural conditions inside or outside of RSAs.  
+
+## Native and Existing Vegetation Types
+
+The first step to identifying RSAs (as outlined in Annex G) is to identify native ecosystems that would typically occur in the management unit given current climate and soil conditions. This ﬁrst section helps to identify the native ecosystems that should occur in the landscape given the existing climate and soil conditions (an essential element of Indicator 6.5.1), as well as existing ecosystems that are currently present within the landscape using [LANDFIRE](https://landfire.gov/) data.
+
+Importantly, these assessments only cover the top 10 most prevalent ecosystems. For lesser present ecosystems, we suggest reviewing additional data sources such as State Wildlife Action Plans, [NatureServe](https://www.natureserve.org/), or local conservation initiatives to ensure you have a full understanding of the landscape(s) in which your management unit occurs.
+
+This section also provides tables of the percent of the top 3 ecosystem types that should occur given historic data (native ecosystems) that still remains or is converted to currently present existing ecosystems.
+
+
+::: {.callout-note}
+We quantified Native Ecosystems using LANDFIRE's [Biophysical Settings](https://landfire.gov/vegetation/bps) data and Existing Ecosystems using LANDFIRE's [Existing Vegetation Type-Ecological Systems](https://landfire.gov/vegetation/evt) data.  See more about these datasets in "Key Concepts" section below. 
+
+Due to evolution of methods and naming conventions the ecosystem names between the Native and Existing ecosystem charts may be different. 
+:::
+
+### Native Ecosystems Greater than 1,000 acres
+
+```{r}
+#| label: bps chart
+#| echo: false
+#| message: false
+#| warning: false
+#| fig.height: 15
+#| fig.width: 10
+
+# plot
+bps_name_chart <- 
+  ggplot(bps_name_df, aes(x = bps_name, y = acres)) +
+  geom_bar(stat = "identity", fill = "#00703C") +
+  labs(
+    subtitle = "",
+    caption = "Biopphysical Settings (refered to as Native Ecosystems here) data obtained from https://landfire.gov/vegetation/bps.",
+    x = "",
+    y = "Acres") +
+  scale_x_discrete(limits = rev(bps_name_df$bps_name),
+                   labels = function(x) str_wrap(x, width = 18)) +
+  scale_y_continuous(labels = comma) +
+  coord_flip() +
+  theme_bw(base_size = 12) +
+  theme(panel.grid = element_blank())
+
+
+bps_name_chart
+
+
+```
+
+<br>
+
+```{r}
+#| echo: false
+#| results: asis
+
+small_bps <- bps_scls_gap |>
+  group_by(bps_name) |>
+  summarize(acres = sum(raw_acres, na.rm = TRUE), .groups = "drop") |>
+  filter(acres < 1000) |>
+  arrange(desc(acres)) |>
+  pull(bps_name)
+
+cat(
+  paste0(
+    "**Native Ecosystems that had less than 1,000 acres in this Ecological Section were:  ",
+    paste(small_bps, collapse = "; "),
+    "."
+  )
+)
+```
+
+LANDFIRE data is designed for landscape-level assessments and not designed for analysis of 'rare' systems.  Please take this into account, explore surronding ecological sections, look to more localized sources of information and use this list with caution.  Not all listed ecosystem may have been in this Ecological Section historically. 
+
+
+
+
+
+
+### Existing Ecosystems - 2024
+
+
+```{r}
+#| label: evt chart
+#| echo: false
+#| message: false
+#| warning: false
+#| fig.height: 15
+#| fig.width: 10
+
+# plot
+evt_name_chart <- 
+  ggplot(top_evt_names_df, aes(x = evt_name, y = acres)) +
+  geom_bar(stat = "identity", fill = "#333333") +
+  labs(
+    subtitle = "",
+    caption = "Data from https://landfire.gov/vegetation/evt. Developed and agricultural types removed.",
+    x = "",
+    y = "Acres") +
+  scale_x_discrete(limits = rev(top_evt_names_df$evt_name),
+                   labels = function(x) str_wrap(x, width = 18)) +
+  scale_y_continuous(labels = comma) +
+  coord_flip() +
+  theme_bw(base_size = 12) +
+  theme(panel.grid = element_blank())
+
+
+evt_name_chart
+
+
+```
+
+<br>
+
+::: {.callout-tip}
+## Native and Existing Ecosystems
+
+For this Ecological System:
+
+* LANDFIRE data shows there were **`r number_of_bps`** Native Ecosystems (by name, there may be more if counting by regional variants).  
+* The top 10 Native Ecosystems presented here covered **`r bps_top10_pct`%** of the total area. 
+* As of 2024 LANDFIRE mapped **`r number_evt`** Existing Vegetation Types for this Ecological Section.
+* The top 10 Existing Ecosystems cover **`r evt_top10_pct`%** of the total area. 
+
+
+:::
+
+<br>
+
+### Flow chart: Composition of Existing Ecosystems within the three most prevalent Native Ecosystem footprints
+
+For the charts below we assessed the amounts of each Existing Ecosystem (at a coarse level; includes agricultural and developed types) within each of the top 3 most prevalent Native Ecosystem footprints for this Ecological Section. More specifically, for each 30M x 30M cell (or pixel) we first mapped the Native Ecosystem, then we mapped what that same pixle was in 2024.  All of the possible combinations were then tallied up to make the charts below. 
+
+<br>
+
+**Understanding the Sankey charts:**
+
+* The Native Ecosystem is on the left, coarse-level Existing Ecosystems on the right.
+* Hover over the grey horizontal bands to explore how Native Ecosystems have split out to the associated Existing Ecosystems on the current landscape.  
+* The total current percent of each Existing Ecosystem for this Ecological Section quantified in parentheses.
+
+
+
+```{r}
+#| label: bps to evt
+#| echo: false
+#| message: false
+#| warning: false
+
+
 
 make_sankey <- function(bps, bps_label, bps_color) {
 
@@ -476,6 +611,7 @@ plot_ly(
     color = node_colors,
     pad = 18,
     thickness = 20,
+    font = list(size = 32),
     hoverinfo = "none"
   ),
   link = list(
@@ -487,7 +623,7 @@ plot_ly(
     ),
     hovertemplate = "%{customdata}<extra></extra>"
   )
-)
+)  |> layout(font = list(size = 18))
 }
 
 out <- lapply(seq_len(nrow(top_bps_sankey)), function(i) {
@@ -509,10 +645,73 @@ tagList(out)
 ```
 
 
+
+
+<br>
+
+### Summary Table of Conversion
+
+In the table below we summarize conversion of the top 10 Native Ecosystems. All area values are in acres.  Click on column names to sort.
+
+<br> 
+
+```{r}
+#| label: remining nat veg table
+#| echo: false
+#| message: false
+#| warning: false
+
+
+top_bps_summary %>%
+  mutate(
+    pct_num = pct_natural_remaining,   # numeric for sorting
+    `Total Area` = comma(total_area),
+    `Natural Vegetation Remaining` = comma(natural_area),
+    `Converted (Agriculture + Developed)` = comma(converted_area),
+    `Percent Natural Vegetation Remaining` = percent(pct_natural_remaining, accuracy = 0.1)
+  ) %>%
+  select(
+    `Native Ecosystem` = bps_name,
+    `Total Area`,
+    `Natural Vegetation Remaining`,
+    `Converted (Agriculture + Developed)`,
+    `Percent Natural Vegetation Remaining`,
+    pct_num
+  ) %>%
+  datatable(
+    rownames = FALSE,
+    options = list(
+      dom = "t",                # <-- removes ALL table controls
+      ordering = TRUE,
+      columnDefs = list(
+        list(visible = FALSE, targets = 5)  # hide the numeric sort col
+      )
+    )
+  ) %>%
+
+
+formatStyle(
+  columns = 1:5,   # only visible columns
+  `text-align` = "center"
+)
+
+
+
+
+```
+ 
+ <br>
+ 
+::: {.callout-note}
+**Consideration:**  Before moving on to the next section think through which ecosystems have been most impacted by conversion.  If a system has largely been converted to agricultural and developed land uses AND it has low levels of protection below it may be worth additional consideration.  
+:::
+
+<br>
+
 ## GAP Status
 
 
-This section provides an assessment of protection and representation of the above identified ecosystem types within (Gap Analysis Project)[https://www.usgs.gov/programs/gap-analysis-project] status lands [ACE4.1]within the landscape (another element of Indicator 6.5.1). It does not evaluate “adequate” vs “inadequate” levels of protection and representation, which will be unique to each identified ecosystem type and its distinct qualities. Additionally, it highlights native ecosystems that should occur in the landscape given historic context[ACE5.1] and current conditions but are not well represented and protected in GAP status 1, 2 and 3 lands [ACE6.1]within the landscape. 
+The second step to identifying RSAs (as outlined in Annex G) is to assess the adequacy of representation and protection of the identified native ecosystems within the landscape. This next section provides the first step to making this assessment by showing percent of each of the top 10 ecosystems (those listed above) that is protected in Gap Status 1, 2, or 3 lands.  It does not evaluate “adequate” vs “inadequate” levels of protection and representation, which will be unique to each identiﬁed ecosystem type and its distinct qualities. 
 
 
 
@@ -526,76 +725,165 @@ This section provides an assessment of protection and representation of the abov
 
 **Gap Status 3:** An area having permanent protection from conversion of natural land cover for the majority of the area, but subject to extractive uses of either a broad, low intensity type (for example, logging, Off-Highway Vehicle recreation) or localized intense type (for example, mining). It also confers protection to federally listed endangered and threatened species throughout the area.
 
-*GAP status 4 not shown in chart below.  Also note that Existing Ecosystems are shown in descending order of amount in GAP Status levels 1-3.  Order of these bars are likely different than order of Existing Ecosystems chart above. *
+**GAP status 4 not shown in chart below. Chart is interactive.  Hover over bars to get more information. **
 
 ```{r}
 #| label: protected area
 #| echo: false
 #| message: false
 #| warning: false
-#| fig.height: 10
-#| fig.width: 10
 
 
+evt_pad_summary <- evt_pad_summary |>
+  mutate(
+    acres_gap = pct * total_acres,
 
+    evt_label = paste0(
+      evt_name,
+      " (", scales::comma(total_acres), ")"
+    ),
+
+    evt_label = factor(
+      evt_label,
+      levels = unique(
+        evt_label[match(top_evt_names_df$evt_name, evt_name)]
+      )
+    )
+  )
+
+evt_pad_summary <- evt_pad_summary |>
+  mutate(
+    evt_name = factor(
+      evt_name,
+      levels = top_evt_names_df$evt_name
+    )
+  )
+
+n_evts <- dplyr::n_distinct(evt_pad_summary$evt_name)
+
+plot_height <- max(
+  1100,
+  n_evts * 70
+)
 
 plot <-
   ggplot(
     evt_pad_summary,
     aes(
-      x = evt_name,
+      x = evt_label,
       y = pct,
-      fill = gap_sts)) +
-  geom_bar(stat = "identity", position = "stack") +
+      fill = gap_sts,
+      text = paste0(
+        "Existing Ecosystem: ", evt_label,
+        "<br>Gap Status: ", gap_sts,
+        "<br>Percent: ", scales::percent(pct, accuracy = 1),
+        "<br>Acres: ", scales::comma(round(acres_gap, 0))
+      )
+    )
+  ) +
+  geom_bar(
+    stat = "identity",
+    position = "stack",
+    width = 0.6
+  ) +
   coord_flip() +
   scale_x_discrete(
-    labels = function(x) stringr::str_wrap(x, 30) ) +
+    limits = rev(levels(evt_pad_summary$evt_label)),
+    labels = function(x) stringr::str_wrap(x, 25)
+  ) +
   scale_y_continuous(
-    labels = scales::percent_format(accuracy = 1) ) +
+    labels = scales::percent_format(accuracy = 1)
+  ) +
   scale_fill_manual(
     values = c(
-      "#1da850",
-      "#532a66",
-      "#D5D5D5"
+      "#66A98A",
+      "#5E3D7F",
+      "#CCCCCC"
     ),
     drop = FALSE,
-    na.translate = FALSE) +
+    na.translate = FALSE
+  ) +
   theme_bw(base_size = 14) +
   theme(
-    panel.grid = element_blank()  ) +
+    panel.grid = element_blank()
+  ) +
   labs(
     fill = "Gap Status",
-    subtitle = "Gap Status 1 -3 for top Exising Ecosystems",
+    subtitle = "Gap Status 1-3 for Existing Ecosystems",
     caption = "Data from landfire.gov and usgs.gov",
     x = "",
-    y = "Percent of total ecosystem")
+    y = "Percent of total ecosystem"
+  )
 
-plot
+plotly::ggplotly(
+  plot,
+  height = plot_height,
+  tooltip = "text"
+) |>
+  plotly::layout(
+    autosize = TRUE,
+    margin = list(
+      l = 325,
+      r = 40,
+      t = 60,
+      b = 80
+    ),
+    xaxis = list(
+      fixedrange = TRUE,
+      automargin = TRUE
+    ),
+    yaxis = list(
+      fixedrange = TRUE,
+      automargin = TRUE
+    ),
+    dragmode = FALSE,
+    bargap = 0.4
+  ) |>
+  plotly::config(
+    scrollZoom = FALSE,
+    displayModeBar = FALSE,
+    responsive = TRUE
+  )
 
-
-
-
-# make interactive
-# plotly <- ggplotly(plot, height = 1720, width = 1000)  
-# 
-# 
-# plotly
 
 ```
 
 
 
-## Exploration of Successional Classes and Historical Disturbance Amounts for top Native Ecosystesm
 
-ADD FSC LANGUAGE.  RELEVANT TO RSAs, 6.1.1, etc. 
+<br>
+
+::: {.callout-tip}
+**Protection Status**
+
+* The lowest observed protection level is **`r scales::percent(min_pct, accuracy = 1)`**.
+* Ecosystems with the least protection include: **`r low_evt_names`**.
+* The lowest level of strict protection (GAP Status 1) is **`r scales::percent(min_gap1_pct, accuracy = 0.1)`**, with the least represented ecosystems including: **`r low_gap1_names`**.
+
+:::
+
+
+## Next Steps
+
+If the result of the assessment conducted using the information above combined with additional research and justification on the part of the certificate holder shows that all native ecosystems are adequately represented or protected in the landscape, then there is no need to establish RSAs within the management unit. 
+If the results of the assessment find that there are native ecosystems that are not adequately represented or protected within the landscape, viable examples of these ecosystems will need to be designated as Representative Sample Areas within the management unit. If there are no viable examples, degraded examples that could be restored are designated as RSAs and are managed to restore to more natural conditions. 
+
+### Exploration of Successional Classes and Historical Disturbance Amounts for top Native Ecosystems
+
+Understanding successional class data for the native ecosystems in your landscape can help provide a more in-depth view into levels of representation and protection, This data may be especially helpful if the assessments conducted above show that there is a need to establish RSAs within your management unit. Designating areas of native ecosystems within your management unit that represent underrepresented successional classes is encouraged. The table below provides greater insight into historic vs current succession class amounts for the top native ecosystems in your landscape. 
 
 ### Reference and Current Succession Class Amounts for top Native Ecosystems
 
-We quantified Native Ecosystems using LANDFIRE's (Biophysical Settings)[https://landfire.gov/vegetation/bps]  spatial data, "reference" succession class amounts from LANDFIRE's (Biophysical Settings Models)[https://landfire.gov/vegetation/bps-models], and current amounts of each succession class using LANDFIRE's (Succession Class)[https://landfire.gov/vegetation/sclass]spatial data. See more about these datasets in "Key Concepts" section below. 
+We quantified Native Ecosystems using LANDFIRE's [Biophysical Settings](https://landfire.gov/vegetation/bps)  spatial data, "reference" succession class amounts from LANDFIRE's [Biophysical Settings Models](https://landfire.gov/vegetation/bps-models), and current amounts of each succession class using LANDFIRE's (Succession Class)[https://landfire.gov/vegetation/sclass]spatial data. See more about these datasets in "Key Concepts" section below. 
 
-*We selected the top 10 Native Ecosystems for the charts below.  Most Native Ecosystems have 'variants' representing different reference conditions (e.g., different successional stages and amounts).  Therefore there may be more than 10 charts below.*
+**About the charts that follow:**
 
-*Native Ecosystem (i.e., LANDFIRE Biophysical Settings) descriptions and succession class definitions presented at bottom of report)*
+* We selected the top 10 Native Ecosystems by their unique numerical code for the charts below.  Most Native Ecosystems have 'variants' representing different reference conditions (e.g., different successional stages and amounts).  Therefore there may be multiple charts per BpS name, and each Native Ecosystem in the 'Native Ecosystems' chart above may not have a chart below.
+* Native Ecosystem (i.e., LANDFIRE Biophysical Settings) descriptions and succession class definitions presented at bottom of report)
+* Because the succession classes are custom for each ecosystem the classes are labeled simply as A-E, plus:
+  * UN for "Uncharacteristic Native", or situations where the vegetation is native, but the structure (i.e., canopy cover and height) currently present was not defined as reference. 
+  * UE for "Uncharacteristic Exotic"
+  For descriptions of the classes see table below (and documents as well).
 
 
 ```{r}
@@ -603,7 +891,7 @@ We quantified Native Ecosystems using LANDFIRE's (Biophysical Settings)[https://
 #| echo: false
 #| message: false
 #| warning: false
-#| fig.height: 14
+#| fig.height: 16
 #| fig.width: 10
 
 
@@ -624,10 +912,20 @@ current_data <- bps_scls_gap |>
 
 # get list of bps_model values for aoi
 
+## original way---too many bpss
+# top_bps_models <- current_data |>
+#   select(bps_model, bps_name) |>
+#   filter(bps_name %in% top_bps) |>
+#   group_by(bps_name, bps_model) 
+
+
 top_bps_models <- current_data |>
-  select(bps_model, bps_name) |>
-  filter(bps_name %in% top_bps) |>
-  group_by(bps_name, bps_model) 
+  distinct(bps_model, bps_total) %>%   # avoid duplicates across rows
+  arrange(desc(bps_total)) %>%
+  slice_head(n = 10)
+
+
+
 
 
 #2) aoi ref con
@@ -714,7 +1012,7 @@ sclasplot <-
     strip.text = element_text(margin = margin(4, 6, 4, 6))
   ) +
   scale_fill_manual(
-    values = c("#375eb3", "#5e8568"),  # present (grey), past (green)
+    values = c("#4E84AF", "#66A98A"),  # present (grey), past (green)
     name = " ",
     labels = c("Present", "Past")
   ) +
@@ -837,5 +1135,111 @@ In order to better understand the the quantity of historical ecosystems, their p
 
 ## Native Ecosystem Descriptions and Succession Class Definitions
 
+To better understand 'reference' conditions for the Native Ecosystems of the US, the LANDFIRE program developed descriptions plus accompanying state-and-transition models that depict how these systems 'looked and functioned' with natural disturbance regimes.  Below you can download the descriptions for the dominant Native Ecosystems and explore the succession class descriptions in a table.
+
+LANDFIRE developed and delivers this information by Map Zone.  If an ecosystem crosses multiple Map Zones there may be multiple 'variants'.  In the table of links to the descriptions you will see "Model Codes", which represent an unique 5 digit code for the system followed by a list of Map Zones that description applies to.  
+
+
+![LANDFIRE Map Zones for the lower 48 states](images/conus_mzs.jpg)
+
+
+```{r}
+#| label: bps_urls
+#| echo: false
+#| message: false
+#| warning: false
+
+filtered_sclass <- sclass_descriptions |>
+  filter(bps_model %in% top_bps_models$bps_model) |>
+  left_join(bps_name_number, by = c("bps_model" = "model_code"))
+
+url_template <- "https://github.com/rswaty/bps_docs_parse/raw/main/all_bps_docs/10080_1_2_3_7.docx"
+
+bps_urls <- filtered_sclass %>%
+  distinct(bps_name, bps_model) %>%   # key line
+  mutate(
+    url = gsub("10080_1_2_3_7", bps_model, url_template),
+    link = paste0(
+      '<a href="', url, '" target="_blank">',
+      bps_name, ' (', bps_model, ')',
+      '</a>'
+    )
+  )
+
+datatable(
+  bps_urls %>% select(
+    `Native Ecosystem` = bps_name,
+    `Model Code` = bps_model,
+    `Document` = link
+  ),
+  escape = FALSE,
+  rownames = FALSE,
+  options = list(
+    dom = "flt",
+    pageLength = 10
+  )
+)
+
+
+
+```
+
+
+<br>
+<br>
+
+
+
+As noted above each Native Ecosystem has up to 5 succession classes, and each one has unique descriptions and mapping rules.  Those descriptions and mapping rules for the Native Ecosystems presented in the Succession Class Chart are presented below.
+
+```{r}
+#| label: s-class description table
+#| echo: false
+#| message: false
+#| warning: false
+
+
+
+
+
+
+filtered_sclass %>%
+  mutate(
+    sort_id = class_id
+  ) %>%
+  select(
+    `Native Ecosystem Name` = bps_name,
+    `BpS Model` = bps_model,
+    `Class label` = label,
+    `Short description` = class_id,
+    `Full description` = description,
+    sort_id
+  ) %>%
+  datatable(
+    rownames = FALSE,
+    options = list(
+      dom = "flt",
+      ordering = TRUE,
+      columnDefs = list(
+        list(visible = FALSE, targets = 5),                # hide sort col
+        list(width = "400px", targets = 4)                 # give description space
+      )
+    )
+  ) %>%
+  formatStyle(
+    columns = 1:4,
+    `text-align` = "left"
+  ) %>%
+  formatStyle(
+    columns = 5,
+    `text-align` = "left",
+    `white-space` = "normal"   # THIS is the key: allows wrapping
+  )
+
+
+
+
+
+```
 
 
