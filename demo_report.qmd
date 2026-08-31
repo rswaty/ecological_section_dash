@@ -423,22 +423,24 @@ This tool serves to support certificate holders with the requirements of Criteri
 
 This tool primarily helps with elements of Indicator 6.5.1 and may additionally assist in conformance with Indicators 6.5.2 - 6.5.6. It is deeply aligned with Annex G of the FSC US FSS, which provides guidance for identifying RSAs, as well as guidance for management and activities within RSAs and managing to restore more natural conditions inside or outside of RSAs.  
 
-## Native and Existing Vegetation Types
+## Historic Native and Existing Vegetation Types
 
-The first step to identifying RSAs (as outlined in Annex G) is to identify native ecosystems that would typically occur in the management unit given current climate and soil conditions. This ﬁrst section helps to identify the native ecosystems that should occur in the landscape given the existing climate and soil conditions (an essential element of Indicator 6.5.1), as well as existing ecosystems that are currently present within the landscape using [LANDFIRE](https://landfire.gov/) data.
+The first step to identifying RSAs (as outlined in Annex G) is to identify native ecosystems that would typically occur in the management unit given current climate and soil conditions. This ﬁrst section helps to identify the historic native ecosystems that should occur in the landscape given the existing climate and soil conditions (an essential element of Indicator 6.5.1). It then helps to identify the existing ecosystems that are currently present within the landscape (using [LANDFIRE](https://landfire.gov/) data).
 
 Importantly, these assessments only cover the top 10 most prevalent ecosystems. For lesser present ecosystems, we suggest reviewing additional data sources such as State Wildlife Action Plans, [NatureServe](https://www.natureserve.org/), or local conservation initiatives to ensure you have a full understanding of the landscape(s) in which your management unit occurs.
 
-This section also provides tables of the percent of the top 3 ecosystem types that should occur given historic data (native ecosystems) that still remains or is converted to currently present existing ecosystems.
+This section also provides tables of the percent of the top 3 ecosystem types that should occur given historic data (historic native ecosystems) that remain or are converted to currently present existing ecosystems.
+
 
 
 ::: {.callout-note}
-We quantified Native Ecosystems using LANDFIRE's [Biophysical Settings](https://landfire.gov/vegetation/bps) data and Existing Ecosystems using LANDFIRE's [Existing Vegetation Type-Ecological Systems](https://landfire.gov/vegetation/evt) data.  See more about these datasets in "Key Concepts" section below. 
+We quantified Historic Native Ecosystems using LANDFIRE's [Biophysical Settings](https://landfire.gov/vegetation/bps) data and Existing Ecosystems using LANDFIRE’s [Existing Vegetation Type-Ecological Systems]([Existing Vegetation Type-Ecological Systems](https://landfire.gov/vegetation/evt)) data. See more about these datasets in “Key Concepts” section below.
 
-Due to evolution of methods and naming conventions the ecosystem names between the Native and Existing ecosystem charts may be different. 
+Due to evolution of methods and naming conventions, the ecosystem names between the Historic Native and Existing ecosystem charts may be different.
+ 
 :::
 
-### Native Ecosystems Greater than 1,000 acres
+### Historic Native Ecosystems Greater than 1,000 acres
 
 ```{r}
 #| label: bps chart
@@ -454,7 +456,7 @@ bps_name_chart <-
   geom_bar(stat = "identity", fill = "#00703C") +
   labs(
     subtitle = "",
-    caption = "Biopphysical Settings (refered to as Native Ecosystems here) data obtained from https://landfire.gov/vegetation/bps.",
+    caption = "Biophysical Settings (refered to as Historic Native Ecosystems here) data obtained from https://landfire.gov/vegetation/bps.",
     x = "",
     y = "Acres") +
   scale_x_discrete(limits = rev(bps_name_df$bps_name),
@@ -485,7 +487,7 @@ small_bps <- bps_scls_gap |>
 
 cat(
   paste0(
-    "**Native Ecosystems that had less than 1,000 acres in this Ecological Section were:  ",
+    "**Historic Native Ecosystems that had less than 1,000 acres in this Ecological Section were:  ",
     paste(small_bps, collapse = "; "),
     "."
   )
@@ -535,12 +537,12 @@ evt_name_chart
 <br>
 
 ::: {.callout-tip}
-## Native and Existing Ecosystems
+## Historic Native and Existing Ecosystems
 
-For this Ecological System:
+For this Ecological Section:
 
-* LANDFIRE data shows there were **`r number_of_bps`** Native Ecosystems (by name, there may be more if counting by regional variants).  
-* The top 10 Native Ecosystems presented here covered **`r bps_top10_pct`%** of the total area. 
+* LANDFIRE data shows there were **`r number_of_bps`** Historic Native Ecosystems (by name, there may be more if counting by regional variants).  
+* The top 10 Historic Native Ecosystems presented here covered **`r bps_top10_pct`%** of the total area. 
 * As of 2024 LANDFIRE mapped **`r number_evt`** Existing Vegetation Types for this Ecological Section.
 * The top 10 Existing Ecosystems cover **`r evt_top10_pct`%** of the total area. 
 
@@ -549,16 +551,16 @@ For this Ecological System:
 
 <br>
 
-### Flow chart: Composition of Existing Ecosystems within the three most prevalent Native Ecosystem footprints
+### Flow chart: Composition of Existing Ecosystems within the three most prevalent Historic Native Ecosystem footprints
 
-For the charts below we assessed the amounts of each Existing Ecosystem (at a coarse level; includes agricultural and developed types) within each of the top 3 most prevalent Native Ecosystem footprints for this Ecological Section. More specifically, for each 30M x 30M cell (or pixel) we first mapped the Native Ecosystem, then we mapped what that same pixle was in 2024.  All of the possible combinations were then tallied up to make the charts below. 
+For the charts below we assessed the amounts of each Existing Ecosystem (at a coarse level; includes agricultural and developed types) within each of the top 3 most prevalent Native Ecosystem footprints for this Ecological Section. 
 
 <br>
 
 **Understanding the Sankey charts:**
 
-* The Native Ecosystem is on the left, coarse-level Existing Ecosystems on the right.
-* Hover over the grey horizontal bands to explore how Native Ecosystems have split out to the associated Existing Ecosystems on the current landscape.  
+* The Historic Native Ecosystem is on the left, coarse-level Existing Ecosystems on the right.
+* Hover over the grey horizontal bands to explore how Historic Native Ecosystems have split out to the associated Existing Ecosystems on the current landscape.  
 * The total current percent of each Existing Ecosystem for this Ecological Section quantified in parentheses.
 
 
@@ -651,7 +653,7 @@ tagList(out)
 
 ### Summary Table of Conversion
 
-In the table below we summarize conversion of the top 10 Native Ecosystems. All area values are in acres.  Click on column names to sort.
+In the table below we summarize conversion of the top 10 Historic Native Ecosystems. All area values are in acres.  Click on column names to sort.
 
 <br> 
 
@@ -703,15 +705,14 @@ formatStyle(
  <br>
  
 ::: {.callout-note}
-**Consideration:**  Before moving on to the next section think through which ecosystems have been most impacted by conversion.  If a system has largely been converted to agricultural and developed land uses AND it has low levels of protection below it may be worth additional consideration.  
+**Consideration:**  Before moving on to the next section, think through which ecosystems have been most impacted by conversion. If a system has largely been converted to agricultural and developed land uses AND it has low levels of protection below, it may be worth additional consideration.  
 :::
 
 <br>
 
 ## GAP Status
 
-
-The second step to identifying RSAs (as outlined in Annex G) is to assess the adequacy of representation and protection of the identified native ecosystems within the landscape. This next section provides the first step to making this assessment by showing percent of each of the top 10 ecosystems (those listed above) that is protected in Gap Status 1, 2, or 3 lands.  It does not evaluate “adequate” vs “inadequate” levels of protection and representation, which will be unique to each identiﬁed ecosystem type and its distinct qualities. 
+The second step to identifying RSAs (as outlined in Annex G) is to assess the adequacy of representation and protection of the identified native ecosystems within the landscape. This next section provides the first step to making this assessment by showing the percent of each of the existing ecosystems that covered more than 1,000ac and that [CE3.1](those listed above) that are protected in Gap Status 1, 2, or 3 lands. Importantly, this chart does not evaluate “adequate” vs “inadequate” levels of protection and representation, which will be unique to each identiﬁed ecosystem type and its distinct qualities. 
 
 
 
@@ -803,16 +804,16 @@ plot <-
     drop = FALSE,
     na.translate = FALSE
   ) +
-  theme_bw(base_size = 14) +
+  theme_bw(base_size = 12) +
   theme(
     panel.grid = element_blank()
   ) +
   labs(
     fill = "Gap Status",
     subtitle = "Gap Status 1-3 for Existing Ecosystems",
-    caption = "Data from landfire.gov and usgs.gov",
+    caption = "Data from landfire.gov and usgs.gov.",
     x = "",
-    y = "Percent of total ecosystem"
+    y = "Percent of Total Existing Ecosystem Protected by GAP Status 1, 2, & 3 within the Ecological Section"
   )
 
 plotly::ggplotly(
@@ -863,24 +864,30 @@ plotly::ggplotly(
 :::
 
 
-## Next Steps
+## Next Steps – No need to establish RSA(s)
 
 If the result of the assessment conducted using the information above combined with additional research and justification on the part of the certificate holder shows that all native ecosystems are adequately represented or protected in the landscape, then there is no need to establish RSAs within the management unit. 
-If the results of the assessment find that there are native ecosystems that are not adequately represented or protected within the landscape, viable examples of these ecosystems will need to be designated as Representative Sample Areas within the management unit. If there are no viable examples, degraded examples that could be restored are designated as RSAs and are managed to restore to more natural conditions. 
+
+## Next Steps – Need to establish RSA(s)
+
+Per Indicator 6.5.2, if the results of the assessment conducted using the information above combined with additional research and justification on the part of the certificate holder shows that there are native ecosystems that are not adequately represented or protected within the landscape, viable examples of these ecosystems will need to be designated as Representative Sample Areas within the management unit. If there are no viable examples, degraded examples that could be restored need to be designated as RSAs and managed to restore to more natural conditions.
+
+When there is a need for RSAs, designating areas of native ecosystems within your management unit that represent underrepresented successional classes is encouraged, but not required. In these cases, the following sections may be helpful in advising decisions by providing a more in-depth view into levels of representation and protection of different successional classes for each ecosystem. 
+
 
 ### Exploration of Successional Classes and Historical Disturbance Amounts for top Native Ecosystems
 
-Understanding successional class data for the native ecosystems in your landscape can help provide a more in-depth view into levels of representation and protection, This data may be especially helpful if the assessments conducted above show that there is a need to establish RSAs within your management unit. Designating areas of native ecosystems within your management unit that represent underrepresented successional classes is encouraged. The table below provides greater insight into historic vs current succession class amounts for the top native ecosystems in your landscape. 
+The table below provides insight into historic vs current succession class amounts for the top native ecosystems in this landscape. 
 
 ### Reference and Current Succession Class Amounts for top Native Ecosystems
 
-We quantified Native Ecosystems using LANDFIRE's [Biophysical Settings](https://landfire.gov/vegetation/bps)  spatial data, "reference" succession class amounts from LANDFIRE's [Biophysical Settings Models](https://landfire.gov/vegetation/bps-models), and current amounts of each succession class using LANDFIRE's (Succession Class)[https://landfire.gov/vegetation/sclass]spatial data. See more about these datasets in "Key Concepts" section below. 
+We quantified Historic Native Ecosystems using LANDFIRE's [Biophysical Settings](https://landfire.gov/vegetation/bps)  spatial data, "reference" succession class amounts from LANDFIRE's [Biophysical Settings Models](https://landfire.gov/vegetation/bps-models), and current amounts of each succession class using LANDFIRE's (Succession Class)[https://landfire.gov/vegetation/sclass]spatial data. See more about these datasets in "Key Concepts" section below. 
 
 **About the charts that follow:**
 
-* We selected the top 10 Native Ecosystems by their unique numerical code for the charts below.  Most Native Ecosystems have 'variants' representing different reference conditions (e.g., different successional stages and amounts).  Therefore there may be multiple charts per BpS name, and each Native Ecosystem in the 'Native Ecosystems' chart above may not have a chart below.
-* Native Ecosystem (i.e., LANDFIRE Biophysical Settings) descriptions and succession class definitions presented at bottom of report)
-* Because the succession classes are custom for each ecosystem the classes are labeled simply as A-E, plus:
+* We selected the top 10 Historic Native Ecosystems by their unique numerical code for the charts below.  Most Historic Native Ecosystems have 'variants' representing different reference conditions (e.g., different successional stages and amounts).  Therefore there may be multiple charts per BpS name, and each Historic Native Ecosystem in the 'Native Ecosystems' chart above may not have a chart below.
+* Historic Native Ecosystem (i.e., LANDFIRE Biophysical Settings) descriptions and succession class definitions presented at bottom of report).
+* Because the succession classes are custom for each ecosystem the classes are labeled simply as A-E in the chart, plus:
   * UN for "Uncharacteristic Native", or situations where the vegetation is native, but the structure (i.e., canopy cover and height) currently present was not defined as reference. 
   * UE for "Uncharacteristic Exotic"
   For descriptions of the classes see table below (and documents as well).
@@ -1037,7 +1044,7 @@ sclasplot
 
 
 
-### Annual Historical Disturbance Amounts for top Native Ecosystems
+### Annual Historical Disturbance Amounts for top Historic Native Ecosystems
 
 In order to estimate historical amounts of succession classes, LANDFIRE used state and transition modeling with specifics captured in the (Biophysical Settings Models and Descriptions)[https://landfire.gov/vegetation/bps-models].  The transitions in this context are natural disturbances.  By multiplying the modeled annual probability by the mapped amount of an BpS, we can estimate annual disturbance amounts. 
 
@@ -1117,25 +1124,24 @@ facet_wrap(
 ```
 
 
-
-
-
 ## Key Concepts about the input data from LANDFIRE:
 
 In order to better understand the the quantity of historical ecosystems, their protection status, ecological condition and natural disturbance regimes at a landscape scale, we summarized LANDFIRE and GAP data to Ecological Sections. These summaries are coarse, aimed at setting context and setting the stage for structured analysis of more local management areas. 
 
 **Key Concepts about the input data:**
 
-* The Biophysical Settings (BpS) data represents the “habitat” of an ecosystem, based on abiotic factors such as soils, surficial geology, slope, elevation and aspect, plus the current climate. Each BpS has a reference document that describes how it looked and functioned prior to European colonization and a state-and-transition model that estimates how much of each “Succession Class” (see below) would have occurred within the habitat based on best approximations of the natural disturbance regime (refered to below as ‘reference’). The BpSs are based on NatureServe’s Ecological Systems. This data represents ecosystems that “should” occur in the landscape. 
+In order to better understand the quantity of historic ecosystems, their protection status, ecological condition and natural disturbance regimes at a landscape scale, we summarized LANDFIRE and GAP data to Ecological Sections. These summaries are coarse, aimed at setting context and setting the stage for structured analysis of more local management areas.
+
+* The Biophysical Settings (BpS) data represents the “habitat” of an ecosystem, based on abiotic factors such as soils, surficial geology, slope, elevation and aspect, plus the current climate. Each BpS has a reference document that describes how it looked and functioned prior to European colonization and a state-and-transition model that estimates how much of each “Succession Class” (see below) would have occurred within the habitat based on best approximations of the natural disturbance regime (referred to below as ‘reference’). The BpSs are based on NatureServe’s Ecological Systems. This data represents ecosystems that “should” occur in the landscape. We call these Historic Native Ecosystems. 
 * Succession Classes (s-class) are essentially developmental and/or structural stages. There are up to 5 defined for each BpS and are based on lifeform (e.g., broadleaf or needleleaf), and ranges of canopy cover (e.g., 70-80%) and canopy height (e.g., 10-25M ). In addition to modeled estimates of reference percents of each SCL, succession classes are mapped across the US today so that we can compare reference to current amounts.
-* Existing Vegetation Type (EVT) data represents current distribution of NatureServe’s Ecological Systems. Note-because of subsequent review and improvement, BpS and EVT names and lists for particular places may not always match. This data represents ecosystems that occur in the landscape. [CE9.1]
-* Suggest a bullet here about the ecological sections and how that is the “landscape” scale used, in alignment with guidance in the FSC US FSS.
-* Bullet about GAP data. 
+* Existing Vegetation Type (EVT) data represents the current distribution of NatureServe’s Ecological Systems. Because of subsequent review and improvement, BpS and EVT names and lists for particular places may not always match. This data represents ecosystems that occur in the landscape. [CE9.1]. We call these Existing Ecosystems.
+* GAP Status data identifies the level of biodiversity protection provided to ecosystems based on management intent and legal mandates. This information helps assess the extent to which Existing Ecosystems are represented within lands managed for long-term conservation of biodiversity. 
 
 
-## Native Ecosystem Descriptions and Succession Class Definitions
 
-To better understand 'reference' conditions for the Native Ecosystems of the US, the LANDFIRE program developed descriptions plus accompanying state-and-transition models that depict how these systems 'looked and functioned' with natural disturbance regimes.  Below you can download the descriptions for the dominant Native Ecosystems and explore the succession class descriptions in a table.
+## Historic Native Ecosystem Descriptions and Succession Class Definitions
+
+To better understand 'reference' conditions for the Historic Native Ecosystems of the US, the LANDFIRE program developed descriptions plus accompanying state-and-transition models that depict how these systems 'looked and functioned' with natural disturbance regimes.  Below you can download the descriptions for the dominant Native Ecosystems and explore the succession class descriptions in a table.
 
 LANDFIRE developed and delivers this information by Map Zone.  If an ecosystem crosses multiple Map Zones there may be multiple 'variants'.  In the table of links to the descriptions you will see "Model Codes", which represent an unique 5 digit code for the system followed by a list of Map Zones that description applies to.  
 
@@ -1190,7 +1196,7 @@ datatable(
 
 
 
-As noted above each Native Ecosystem has up to 5 succession classes, and each one has unique descriptions and mapping rules.  Those descriptions and mapping rules for the Native Ecosystems presented in the Succession Class Chart are presented below.
+As noted above each Historic Native Ecosystem has up to 5 succession classes, and each one has unique descriptions and mapping rules.  Those descriptions and mapping rules for the Historic Native Ecosystems presented in the Succession Class Chart are presented below.
 
 ```{r}
 #| label: s-class description table
