@@ -1,6 +1,8 @@
 ---
-title: "Ecosystems Assessment: `r params$section_na` Ecological Section"
-author: "Randy Swaty (rswaty@tnc.org)"
+title: "RSA Assessment: `r params$section_na` Ecological Section"
+author:
+  - "Randy Swaty (rswaty@tnc.org)"
+  - "Carly Evans (c.evans@us.fsc.org)"
 date: "`r Sys.Date()`"
 format:
   html:
@@ -390,7 +392,26 @@ bps_name_number <- read_csv("inputs/bps_model_number_name.csv")
 
 sclass_descriptions <- read_csv("inputs/scls_descriptions.csv")
 
+filtered_sclass <- sclass_descriptions |>
+  left_join(
+    bps_name_number,
+    by = c("bps_model" = "model_code"))
 
+url_template <- "https://github.com/rswaty/bps_docs_parse/raw/main/all_bps_docs/10080_1_2_3_7.docx"
+
+bps_urls <- filtered_sclass |>
+  filter(bps_name %in% bps_name_df$bps_name) |>
+  distinct(bps_name, bps_model) |>
+  mutate(
+    url = gsub(
+      "10080_1_2_3_7",
+      bps_model,
+      url_template),
+    link = paste0(
+      '<a href="', url, '" target="_blank">',
+      bps_name,
+      ' (', bps_model, ')',
+      '</a>'))
 
 
 
@@ -875,178 +896,248 @@ Per Indicator 6.5.2, if the results of the assessment conducted using the inform
 When there is a need for RSAs, designating areas of native ecosystems within your management unit that represent underrepresented successional classes is encouraged, but not required. In these cases, the following sections may be helpful in advising decisions by providing a more in-depth view into levels of representation and protection of different successional classes for each ecosystem. 
 
 
-### Exploration of Successional Classes and Historical Disturbance Amounts for top Native Ecosystems
+## Reference vs Current Succession Classes and Historical Disturbances of the Dominant Historic Native Ecosystem
 
-The table below provides insight into historic vs current succession class amounts for the top native ecosystems in this landscape. 
+We quantified Historic Native Ecosystems using LANDFIRE's [Biophysical Settings](https://landfire.gov/vegetation/bps)  spatial data, "reference" succession class amounts from LANDFIRE's [Biophysical Settings Models](https://landfire.gov/vegetation/bps-models), and current amounts of each succession class using LANDFIRE's [Succession Class](https://landfire.gov/vegetation/sclass]) spatial data. See more about these datasets in "Key Concepts" section below. 
 
-### Reference and Current Succession Class Amounts for top Native Ecosystems
+Additionally, the same datasets we are able to estimate the percent of each Historical Native Ecosystem that is disturbed by specific disturbance types annually. 
 
-We quantified Historic Native Ecosystems using LANDFIRE's [Biophysical Settings](https://landfire.gov/vegetation/bps)  spatial data, "reference" succession class amounts from LANDFIRE's [Biophysical Settings Models](https://landfire.gov/vegetation/bps-models), and current amounts of each succession class using LANDFIRE's (Succession Class)[https://landfire.gov/vegetation/sclass]spatial data. See more about these datasets in "Key Concepts" section below. 
+::: {.callout-note}
+Due to the complexities of multiple variants and scale, we only present Historical Native Ecosystem per chart as an example of the analysis that can be conducted.  Please contact Randy Swaty at [rswaty@tnc.org](mailto:rswaty@tnc.org), and/or The Nature Conservancy's LANDFIRE team at [landfire@tnc.org](mailto:landfire@tnc.org) for more information. Also see [this GIS guide](https://thenatureconservancy.github.io/landfire-guide/) for instructions on how to do the succession class analysis using ArcGIS Pro and Microsoft Excel. 
+:::
 
-**About the charts that follow:**
+### Reference vs Current Succession Classes of the Dominant Historic Native Ecosystem 
 
-* We selected the top 10 Historic Native Ecosystems by their unique numerical code for the charts below.  Most Historic Native Ecosystems have 'variants' representing different reference conditions (e.g., different successional stages and amounts).  Therefore there may be multiple charts per BpS name, and each Historic Native Ecosystem in the 'Native Ecosystems' chart above may not have a chart below.
-* Historic Native Ecosystem (i.e., LANDFIRE Biophysical Settings) descriptions and succession class definitions presented at bottom of report).
-* Because the succession classes are custom for each ecosystem the classes are labeled simply as A-E in the chart, plus:
-  * UN for "Uncharacteristic Native", or situations where the vegetation is native, but the structure (i.e., canopy cover and height) currently present was not defined as reference. 
-  * UE for "Uncharacteristic Exotic"
-  For descriptions of the classes see table below (and documents as well).
+**About the chart that follows:**
 
+* The chart presents the most prevalent Historic Native Ecosystem model in this Ecological Section based on mapped area.
+* A Historic Native Ecosystem may have multiple regional variants with different succession classes and reference conditions. The chart therefore uses the single most prevalent Historical Native Ecosystem variant rather than combining variants.
+* The chart compares the LANDFIRE reference percentage with the current mapped percentage for each succession class.
+
+
+**Reading succession class labels:**
+
+* Early, Mid, and Late indicate developmental stages.
+* OPN = Open canopy, CLS = Closed canopy, and ALL = All canopy conditions.  Each Biophysical Setting has custom Open/Closed canopy positions.  See Biophysical Settings description below to read about the species and specific canopy characteristics for each succession class. 
+* UN indicates "Uncharacteristic Native" vegetation, where the vegetation is native but its current structure was not defined under reference conditions.
+* UE indicates "Uncharacteristic Exotic" vegetation.
+* The chart compares the reference amount of each succession class to the amount currently mapped within the dominant Historic Native Ecosystem.
+
+<br> 
 
 ```{r}
 #| label: sclass chart
 #| echo: false
 #| message: false
 #| warning: false
-#| fig.height: 16
-#| fig.width: 10
+#| fig.height: 9
+#| fig.width: 11
 
+# Prepare Current Succession Class Data ----
 
-
-# 1) current observed data
 current_data <- bps_scls_gap |>
   select(count, bps_model, bps_name, label) |>
   unite(model_label, c("bps_model", "label"), remove = FALSE) |>
   group_by(bps_model, model_label, label, bps_name) |>
-  summarise(count = sum(count), .groups = "drop") |>
+  summarise(
+    count = sum(count),
+    .groups = "drop") |>
   group_by(bps_model) |>
   mutate(
     bps_total = sum(count),
-    current_percent = round(count / bps_total * 100)
-  ) |>
-  ungroup() |>
-  select(-(label))
+    current_percent = round(count / bps_total * 100)) |>
+  ungroup()
 
-# get list of bps_model values for aoi
 
-## original way---too many bpss
-# top_bps_models <- current_data |>
-#   select(bps_model, bps_name) |>
-#   filter(bps_name %in% top_bps) |>
-#   group_by(bps_name, bps_model) 
-
+# Select Most Prevalent BpS Model ----
 
 top_bps_models <- current_data |>
-  distinct(bps_model, bps_total) %>%   # avoid duplicates across rows
-  arrange(desc(bps_total)) %>%
-  slice_head(n = 10)
+  distinct(bps_model, bps_name, bps_total) |>
+  arrange(desc(bps_total)) |>
+  slice_head(n = 1)
+
+top_bps_doc <- bps_urls |>
+  filter(bps_model == top_bps_models$bps_model[[1]]) |>
+  pull(link) |>
+  first()
 
 
-
-
-
-#2) aoi ref con
+# Prepare Reference Succession Class Data ----
 
 aoi_ref_con <- ref_con |>
   filter(bps_model %in% top_bps_models$bps_model) |>
-  select(model_label, ref_percent, ref_label) |>
+  select(
+    bps_model,
+    model_label,
+    ref_percent,
+    ref_label) |>
   filter(!endsWith(model_label, "_Water")) |>
   rename(label = ref_label)
 
 
-#3) scls ref and current
+# Prepare Succession Class Labels ----
 
+sclass_labels <- sclass_descriptions |>
+  filter(bps_model %in% top_bps_models$bps_model) |>
+  select(
+    bps_model,
+    label,
+    class_id) |>
+  distinct()
+
+
+# Combine Reference and Current Data ----
 
 scls_data <- aoi_ref_con |>
-  left_join(current_data, by = "model_label") |>
-  mutate(across(ends_with("percent"), ~ replace_na(.x, 0)))
+  left_join(
+    current_data |>
+      select(
+        bps_model,
+        bps_name,
+        bps_total,
+        model_label,
+        label,
+        count,
+        current_percent),
+    by = c(
+      "bps_model",
+      "model_label",
+      "label")) |>
+  left_join(
+    sclass_labels,
+    by = c(
+      "bps_model",
+      "label")) |>
+  mutate(
+    bps_name = coalesce(
+      bps_name,
+      top_bps_models$bps_name[[1]]),
+    bps_total = coalesce(
+      bps_total,
+      top_bps_models$bps_total[[1]]),
+    count = replace_na(count, 0),
+    ref_percent = replace_na(ref_percent, 0),
+    current_percent = replace_na(current_percent, 0),
+    class_id = coalesce(class_id, label),
+    class_label = case_when(
+      label == "UN" ~ "UN",
+      label == "UE" ~ "UE",
+      TRUE ~ class_id)) |>
+  pivot_longer(
+    cols = c(ref_percent, current_percent),
+    names_to = "ref_cur",
+    values_to = "percent") |>
+  mutate(
+    ref_cur = factor(
+      ref_cur,
+      levels = c(
+        "current_percent",
+        "ref_percent"),
+      labels = c(
+        "Present",
+        "Reference")))
 
 
-scls_data <- aoi_ref_con |>
-  left_join(current_data, by = "model_label") |>
-  mutate(across(ends_with("percent"), ~ replace_na(.x, 0))) |>
-  mutate(
-    bps_model = if_else(
-      is.na(bps_model),
-      sub("_[^_]+$", "", model_label),
-      bps_model
-    )
-  ) |>
-  group_by(bps_model) |>
-  mutate(
-    bps_name  = coalesce(bps_name, first(na.omit(bps_name))),
-    bps_total = coalesce(bps_total, first(na.omit(bps_total))),
-    count     = replace_na(count, 0)
-  ) |>
-  ungroup() |>
-  mutate(
-    facet_label = paste0(bps_name, " (", bps_model, ")")
-  )
+# Order Succession Classes ----
 
+class_levels <- scls_data |>
+  distinct(label, class_id) |>
+  mutate(
+    class_label = case_when(
+      label == "UN" ~ "UN",
+      label == "UE" ~ "UE",
+      label == "Agriculture" ~ "Agriculture",
+      label == "Developed" ~ "Developed",
+      TRUE ~ class_id),
+    class_order = match(
+      label,
+      c(
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "UN",
+        "UE",
+        "Agriculture",
+        "Developed"))) |>
+  arrange(class_order) |>
+  pull(class_label)
 
 scls_data <- scls_data |>
-    pivot_longer(
-    cols = c(`ref_percent`, `current_percent`),
-    names_to = "ref_cur",
-    values_to = "percent" )
+  mutate(
+    class_label = case_when(
+      label == "UN" ~ "UN",
+      label == "UE" ~ "UE",
+      label == "Agriculture" ~ "Agriculture",
+      label == "Developed" ~ "Developed",
+      TRUE ~ class_id))
 
 
+# Create Chart Labels ----
 
-# 4) Order succession class factor on x-axis ----
-scls_data$label <- factor(scls_data$label, levels = c(
-  "Developed",
-  "Agriculture",
-  "UE",
-  "UN",
-  "E",
-  "D",
-  "C",
-  "B",
-  "A"
-))
+top_bps_chart_name <- top_bps_models$bps_name[[1]]
 
-# ---- 3) Plot ----
+top_bps_chart_model <- top_bps_models$bps_model[[1]]
+
+sclass_chart_subtitle <- paste0(
+  top_bps_chart_name,
+  " | LANDFIRE BpS Model ",
+  top_bps_chart_model)
+
+
+# Plot Succession Classes ----
+
 sclasplot <-
-  ggplot(scls_data, aes(fill = factor(ref_cur), y = percent, x = label)) +
-  geom_col(width = 0.8, position = position_dodge()) +
+  ggplot(
+    scls_data,
+    aes(
+      x = class_label,
+      y = percent,
+      fill = ref_cur)) +
+  geom_col(
+    width = 0.72,
+    position = position_dodge(width = 0.78)) +
   coord_flip() +
-  scale_x_discrete(limits = levels(scls_data$label)) +
+  scale_x_discrete(
+    limits = rev(class_levels),
+    labels = function(x) stringr::str_wrap(x, width = 35)) +
+  scale_y_continuous(
+    labels = scales::label_percent(scale = 1),
+    expand = expansion(mult = c(0, 0.05))) +
+  scale_fill_manual(
+    values = c(
+      "Present" = "#4E84AF",
+      "Reference" = "#66A98A"),
+    name = NULL) +
   labs(
-    title = "Succession Classes past and present",
-    subtitle = "Top BpSs selected for illustration. Not all succession classes present in all BpSs",
-    caption = "\nData from landfire.gov.",
-    x = "",
-    y = "Acres"
-  ) +
-  theme_minimal(base_size = 12) +
+    title = sclass_chart_subtitle,
+    caption = "Data from landfire.gov.",
+    x = NULL,
+    y = "Percent of BpS model area") +
+  theme_bw(base_size = 13) +
   theme(
-    plot.caption = element_text(hjust = 0, face = "italic"),
+    legend.position = "top",
+    legend.justification = "left",
     plot.title.position = "plot",
     plot.caption.position = "plot",
-    panel.spacing = unit(.05, "lines"),
-    panel.border = element_rect(color = "black", fill = NA, size = 1),
-    strip.background = element_rect(color = "black", size = 1),
-    strip.text = element_text(margin = margin(4, 6, 4, 6))
-  ) +
-  scale_fill_manual(
-    values = c("#4E84AF", "#66A98A"),  # present (grey), past (green)
-    name = " ",
-    labels = c("Present", "Past")
-  ) +
-  facet_wrap(
-    ~ facet_label,
-    ncol = 3,
-    labeller = label_wrap_gen(width = 25)  # wraps on normal spaces; NBSP keeps ", 14%" together
-  ) +
-  scale_y_continuous(labels = comma)
+    plot.caption = element_text(
+      hjust = 0,
+      face = "italic"))
 
 sclasplot
-
-
-
-
-
-
-
-
-
 ```
+ 
+ <br>
+ 
+**Reference document for the dominant Historic Native Ecosystem:**
+
+`r top_bps_doc`
 
 
 
-### Annual Historical Disturbance Amounts for top Historic Native Ecosystems
+### Annual Historical Disturbance Amounts for top Historic Native Ecosystem
 
-In order to estimate historical amounts of succession classes, LANDFIRE used state and transition modeling with specifics captured in the (Biophysical Settings Models and Descriptions)[https://landfire.gov/vegetation/bps-models].  The transitions in this context are natural disturbances.  By multiplying the modeled annual probability by the mapped amount of an BpS, we can estimate annual disturbance amounts. 
 
 
 ```{r}
@@ -1054,72 +1145,59 @@ In order to estimate historical amounts of succession classes, LANDFIRE used sta
 #| echo: false
 #| message: false
 #| warning: false
-#| fig.height: 12
-#| fig.width: 10
+#| fig.height: 6
+#| fig.width: 11
 
+# Historical Disturbance Regime ----
 
+top_bps_name_dist <- top_bps_models$bps_name[[1]]
 
-
-# 1) define the bps set (top 10 by acres)
-top_bps <- bps_name_df$bps_name
-
-# 2) define the transition set you want to show (keeps 7 bars consistent)
-#    you can hard-code your preferred order here if you want.
 trans_levels <- bps_transitions |>
-  filter(bps_name %in% top_bps) |>
+  filter(bps_name == top_bps_name_dist) |>
   distinct(transition) |>
   arrange(transition) |>
   pull(transition)
 
-# if you truly always want exactly 7 named transitions, do this instead:
-# trans_levels <- c("Surface Fire", "Mixed Fire", "Replacement Fire", "Insects", "Disease", "Wind", "Competition or Maintenance")
-
-# 3) summarize: avg across model_codes within bps_name x transition
 bps_trans_plot <- bps_transitions |>
-  filter(bps_name %in% top_bps) |>
-  mutate(pct_disturbed_yr = annual_probability * 100) |>
-  group_by(bps_name, transition) |>
+  filter(bps_name == top_bps_name_dist) |>
+  mutate(
+    pct_disturbed_yr = annual_probability * 100) |>
+  group_by(transition) |>
   summarize(
     pct_disturbed_yr = mean(pct_disturbed_yr, na.rm = TRUE),
     n_models = n(),
-    .groups = "drop"
-  ) |>
-  # 4) ensure every bps_name has every transition (fills missing with 0)
+    .groups = "drop") |>
   tidyr::complete(
-    bps_name = top_bps,
     transition = trans_levels,
-    fill = list(pct_disturbed_yr = 0, n_models = 0)
-  ) |>
-  # 5) bring acres in for facet ordering (optional but nice)
-  left_join(bps_name_df, by = "bps_name") |>
+    fill = list(
+      pct_disturbed_yr = 0,
+      n_models = 0)) |>
   mutate(
-    # order facets by acres (largest at top if you want: use -acres)
-    bps_name = forcats::fct_reorder(bps_name, acres),
-    # order bars within facet
-    transition = factor(transition, levels = rev(trans_levels))
-  )
+    transition = factor(
+      transition,
+      levels = rev(trans_levels)))
 
-# 6) plot: facets = bps_name, bars = transition, x = percent/yr
-ggplot(bps_trans_plot, aes(x = pct_disturbed_yr, y = transition)) +
+ggplot(
+  bps_trans_plot,
+  aes(
+    x = pct_disturbed_yr,
+    y = transition)) +
   geom_col(width = 0.75) +
-facet_wrap(
-  ~ bps_name,
-  ncol = 2,
-  scales = "free_y",
-  labeller = labeller(bps_name = label_wrap_gen(width = 35))) +
   scale_x_continuous(
     labels = label_percent(scale = 1),
-    expand = expansion(mult = c(0, 0.05))) +
+    expand = expansion(mult = c(0, 0))) +
   labs(
-    x = "percent of bps disturbed per year (mean across model codes)",
-    y = NULL
-  ) +
-  theme_bw(base_size = 14) +
+    title = top_bps_name_dist,
+    x = "Percent disturbed per year",
+    y = NULL) +
+  theme_bw(base_size = 13) +
   theme(
-    strip.text = element_text(hjust = 0),
-    panel.grid.minor = element_blank()
-  )
-
+    panel.grid.minor = element_blank(),
+    plot.margin = margin(
+      t = 5,
+      r = 0,
+      b = 5,
+      l = 0))
 
 ```
 
@@ -1139,7 +1217,7 @@ In order to better understand the quantity of historic ecosystems, their protect
 
 
 
-## Historic Native Ecosystem Descriptions and Succession Class Definitions
+## Historic Native Ecosystem Descriptions 
 
 To better understand 'reference' conditions for the Historic Native Ecosystems of the US, the LANDFIRE program developed descriptions plus accompanying state-and-transition models that depict how these systems 'looked and functioned' with natural disturbance regimes.  Below you can download the descriptions for the dominant Native Ecosystems and explore the succession class descriptions in a table.
 
@@ -1155,97 +1233,22 @@ LANDFIRE developed and delivers this information by Map Zone.  If an ecosystem c
 #| message: false
 #| warning: false
 
-filtered_sclass <- sclass_descriptions |>
-  filter(bps_model %in% top_bps_models$bps_model) |>
-  left_join(bps_name_number, by = c("bps_model" = "model_code"))
-
-url_template <- "https://github.com/rswaty/bps_docs_parse/raw/main/all_bps_docs/10080_1_2_3_7.docx"
-
-bps_urls <- filtered_sclass %>%
-  distinct(bps_name, bps_model) %>%   # key line
-  mutate(
-    url = gsub("10080_1_2_3_7", bps_model, url_template),
-    link = paste0(
-      '<a href="', url, '" target="_blank">',
-      bps_name, ' (', bps_model, ')',
-      '</a>'
-    )
-  )
 
 datatable(
-  bps_urls %>% select(
-    `Native Ecosystem` = bps_name,
-    `Model Code` = bps_model,
-    `Document` = link
-  ),
+  bps_urls %>%
+    select(
+      `Native Ecosystem` = bps_name,
+      `Model Code` = bps_model,
+      `Document` = link),
   escape = FALSE,
   rownames = FALSE,
   options = list(
-    dom = "flt",
-    pageLength = 10
-  )
-)
+    dom = "fltip",
+    pageLength = 10))
 
 
 
 ```
 
-
-<br>
-<br>
-
-
-
-As noted above each Historic Native Ecosystem has up to 5 succession classes, and each one has unique descriptions and mapping rules.  Those descriptions and mapping rules for the Historic Native Ecosystems presented in the Succession Class Chart are presented below.
-
-```{r}
-#| label: s-class description table
-#| echo: false
-#| message: false
-#| warning: false
-
-
-
-
-
-
-filtered_sclass %>%
-  mutate(
-    sort_id = class_id
-  ) %>%
-  select(
-    `Native Ecosystem Name` = bps_name,
-    `BpS Model` = bps_model,
-    `Class label` = label,
-    `Short description` = class_id,
-    `Full description` = description,
-    sort_id
-  ) %>%
-  datatable(
-    rownames = FALSE,
-    options = list(
-      dom = "flt",
-      ordering = TRUE,
-      columnDefs = list(
-        list(visible = FALSE, targets = 5),                # hide sort col
-        list(width = "400px", targets = 4)                 # give description space
-      )
-    )
-  ) %>%
-  formatStyle(
-    columns = 1:4,
-    `text-align` = "left"
-  ) %>%
-  formatStyle(
-    columns = 5,
-    `text-align` = "left",
-    `white-space` = "normal"   # THIS is the key: allows wrapping
-  )
-
-
-
-
-
-```
 
 

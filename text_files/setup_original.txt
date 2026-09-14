@@ -1,0 +1,370 @@
+library(janitor)
+library(tidyverse)
+library(stringr)
+library(scales)
+library(plotly)
+library(viridis)
+library(DT)
+library(tidytext)
+library(viridis)
+library(gt)
+library(knitr)
+library(htmltools)
+library(kableExtra)
+
+
+section <- if (exists("params") && !is.null(params$section_na)) {
+  params$section_na
+} else {
+  "Eastern Upper Peninsula"
+}
+
+# Read and wrangle raw data ----
+
+## read in and minor wrangle data for vdep and bps x gap (which may not be used, but original code is set this way so keeping)
+
+bps_remove_groups <- c(
+  "Barren-Rock/Sand/Clay",
+  "Fill-NoData",
+  "Fill-Not Mapped",
+  "Open Water",
+  "Perennial Ice/Snow",
+  "Sparse"
+)
+
+bps_scls_gap <- read.csv("inputs/bps_scl_gap_sections_2025.csv") |>
+  clean_names() |>
+  filter(section_na == section) |>
+  filter(!groupveg %in% bps_remove_groups) |>
+  mutate(raw_acres = round(count * 0.2223945)) |>
+  mutate(across(everything(), ~replace(., . == -9999, 0)))
+
+bps_transitions <- read.csv('inputs/bps_transitions.csv')
+
+ref_con <- read.csv("inputs/ref_con_long.csv") |>
+  rename(bps_model = model_code)
+
+## read in data for evt-gap protected status-keeping only natural veg
+
+evt_remove_phys <- c(
+  "Open Water",
+  "Sparsely Vegetated",
+  "Developed-Roads",
+  "Developed",
+  "Developed-Medium Intensity",
+  "Developed-Low Intensity",
+  "Developed-High Intensity",
+  "Quarries-Strip Mines-Gravel Pits-Well and Wind Pads",
+  "Agricultural",
+  "Snow-Ice",
+  "Fill-NoData",
+  "Exotic Herbaceous",
+  "Exotic Tree-Shrub"
+)
+
+evt_gap_status <- read.csv("inputs/evt_gap_sections_2025.csv") |>
+clean_names() |>
+  filter(section_na == section) |>
+  filter(!evt_phys %in% evt_remove_phys) |>
+  mutate(acres = round(count * 0.2223945)) |>
+  mutate(across(everything(), ~replace(., . == -9999, 0))) 
+
+## by top 10.  commented out august 28 to go with greater than 10k acres below
+# top_evt_names <- evt_gap_status |>
+#   group_by(evt_name) |>
+#   summarize(total_acres = sum(acres, na.rm = TRUE), .groups = "drop") |>
+#   arrange(desc(total_acres)) |>
+#   slice_head(n = 10) |>
+#   pull(evt_name)
+
+# evts with more than 1k acres
+top_evt_names <- evt_gap_status |>
+  group_by(evt_name) |>
+  summarize(total_acres = sum(acres, na.rm = TRUE), .groups = "drop") |>
+  filter(total_acres > 1000) |>
+  arrange(desc(total_acres)) |>
+  pull(evt_name)
+
+evt_gap_status_top10 <- evt_gap_status |>
+  filter(evt_name %in% top_evt_names)
+
+# filtered for top evts > 10k acres
+# top_evt_names_df <- evt_gap_status_top10 |>
+#   group_by(evt_name)|>
+#   summarize(acres = sum(acres)) |>
+#   arrange(desc(acres))
+
+# all EVTs filtered for top evts > 1k acres
+top_evt_names_df <- evt_gap_status |>
+  group_by(evt_name) |>
+  summarize(acres = sum(acres, na.rm = TRUE)) |>
+  filter(acres > 1000) |>
+  arrange(desc(acres))
+
+
+
+evt_totals <- evt_gap_status_top10 |>
+  dplyr::filter(!is.na(gap_sts)) |>
+  dplyr::group_by(evt_name, gap_sts) |>
+  dplyr::summarize(
+    acres = sum(acres, na.rm = TRUE),
+    .groups = "drop"
+  ) |>
+  dplyr::group_by(evt_name) |>
+  dplyr::summarize(
+    total_acres = sum(acres),
+    acres_1_3 = sum(acres[gap_sts %in% 1:3], na.rm = TRUE),
+    .groups = "drop"
+  )
+
+evt_pad_summary <- evt_gap_status_top10 |>
+  dplyr::filter(!is.na(gap_sts), gap_sts %in% 1:3) |>
+  dplyr::group_by(evt_name, gap_sts) |>
+  dplyr::summarize(
+    acres = sum(acres, na.rm = TRUE),
+    .groups = "drop"
+  ) |>
+  tidyr::complete(
+    evt_name,
+    gap_sts = 1:3,
+    fill = list(acres = 0)
+  ) |>
+  dplyr::left_join(evt_totals, by = "evt_name") |>
+  dplyr::mutate(
+    pct = dplyr::if_else(total_acres > 0, acres / total_acres, 0),
+    pct_sum = dplyr::if_else(total_acres > 0, acres_1_3 / total_acres, 0),
+    evt_name = factor(evt_name, levels = top_evt_names_df$evt_name),
+    gap_sts = factor(gap_sts, levels = 1:3)
+  )
+
+
+
+
+
+
+
+
+## read in data for bps to evt comparison chart
+
+bps_evt <- read.csv("inputs/bps_evt_sections_2025.csv") |>
+  clean_names() |>
+  filter(section_na == section)
+
+
+
+bps_evt_top50 <- head(bps_evt, n = 50)
+ write.csv(bps_evt_top50, file = "bps_evt_top_50.csv")
+
+
+# prep data for bps bar chart
+bps_name_df <- bps_scls_gap |>
+  group_by(bps_name) |>
+  summarize(acres = sum(raw_acres, na.rm = TRUE)) |>
+  filter(acres > 1000) |>
+  arrange(desc(acres))
+
+# |>
+#   top_n(n = 10, wt = acres)
+
+# prep data for disturbances chart
+
+top_bps <- bps_name_df$bps_name
+
+bps_trans_filt <- bps_transitions |>
+  filter(bps_name %in% top_bps)
+
+bps_trans_summarized <- bps_trans_filt |>
+  mutate(pct_disturbed_yr = annual_probability * 100) |>
+  group_by(bps_name, transition) |>
+  summarize(
+    pct_disturbed_yr = mean(pct_disturbed_yr, na.rm = TRUE),
+    n_models = n(),        # optional but useful for QA
+    .groups = "drop"
+  )
+
+
+bps_trans_plot <- bps_trans_summarized |>
+  left_join(bps_name_df, by = "bps_name") |>
+  mutate(
+    bps_name = fct_reorder(bps_name, acres)
+  )
+
+
+## for map?
+slugify <- function(x) {
+  x <- tolower(x)
+  x <- gsub("[^a-z0-9]+", "_", x)
+  x <- gsub("^_+|_+$", "", x)
+  x
+}
+
+locator_img <- file.path(
+  "locator_maps",
+  paste0(slugify(params$section_na), ".jpg")
+)
+
+stopifnot(file.exists(locator_img))
+
+
+### evt bullets
+number_evt <- length(unique(evt_gap_status$evt_name))
+
+top_evt <- evt_gap_status_top10 |>
+  slice_max(acres, n = 1) |>
+  pull(evt_name)
+
+
+total_count_evt <- sum(bps_evt$count, na.rm = TRUE)
+
+evt_top10_pct <- bps_evt %>%
+  group_by(evt_name) %>%
+  summarise(count = sum(count, na.rm = TRUE), .groups = "drop") %>%
+  arrange(desc(count)) %>%
+  slice_head(n = 10) %>%
+  summarise(pct = round(sum(count) / total_count_evt * 100)) %>%
+  pull(pct)
+
+# data for bps summary bullets
+
+top_bps_name <- bps_name_df |>
+  slice_max(acres, n = 1) |>
+  pull(bps_name)
+
+top_bps_acres <- bps_name_df |>
+  slice_max(acres, n = 1) |>
+  pull(acres)
+
+
+number_of_bps <- length(unique(bps_scls_gap$bps_name))
+
+
+total_count_bps <- sum(bps_evt$count, na.rm = TRUE)
+
+bps_top10_pct <- bps_evt %>%
+  group_by(bps_name) %>%
+  summarise(count = sum(count, na.rm = TRUE), .groups = "drop") %>%
+  arrange(desc(count)) %>%
+  slice_head(n = 10) %>%
+  summarise(pct = round(sum(count) / total_count_bps * 100)) %>%
+  pull(pct)
+
+bps_top10_pct
+
+
+
+
+
+
+
+
+## ===== EVT protection summaries =====
+
+# GAP 1–3 (overall protection)
+low_protection_evts <- evt_pad_summary |>
+  distinct(evt_name, pct_sum) |>
+  arrange(pct_sum) |>
+  slice_head(n = 3) |>
+  mutate(
+    label = paste0(
+      evt_name,
+      " (",
+      scales::percent(pct_sum, accuracy = 1),
+      ")"
+    )
+  )
+
+low_evt_names <- paste(low_protection_evts$label, collapse = "; ")
+min_pct <- min(low_protection_evts$pct_sum, na.rm = TRUE)
+
+# GAP 1 (strict protection)
+low_gap1_evts <- evt_pad_summary |>
+  filter(gap_sts == "1") |>
+  distinct(evt_name, pct) |>
+  arrange(pct) |>
+  slice_head(n = 3) |>
+  mutate(
+    label = paste0(
+      evt_name,
+      " (",
+      scales::percent(pct, accuracy = 0.1),
+      ")"
+    )
+  )
+
+low_gap1_names <- paste(low_gap1_evts$label, collapse = "; ")
+
+min_gap1_pct <- min(low_gap1_evts$pct, na.rm = TRUE)
+
+
+## for sankey
+
+
+evt_colors <- c(
+  "Conifer"      = "#00542D",
+  "Hardwood"     = "#B3D5A7",
+  "Shrubland"    = "#5E3D7F",
+  "Grassland"    = "#A4956E",
+  "Riparian"     = "#5688C7",
+  "Exotics"      = "#F15D50",
+  "Agricultural" = "#FFE772",
+  "Developed"    = "#999999"
+)
+
+groupveg_colors <- c(
+  "Conifer"   = "#00542D",
+  "Hardwood"  = "#B3D5A7",
+  "Shrubland" = "#5E3D7F",
+  "Grassland" = "#A4956E",
+  "Riparian"  = "#5688C7"
+)
+
+
+bps_evt_norm <- bps_evt %>%
+  mutate(
+    evt_phys = case_when(
+      evt_phys %in% c("Exotic Herbaceous", "Exotic Tree-Shrub") ~ "Exotics",
+      evt_phys == "Agricultural"                               ~ "Agricultural",
+      evt_phys == "Developed"                                  ~ "Developed",
+      grepl("^Developed", evt_phys)                            ~ "Developed",
+      grepl("Quarries|Strip Mines|Gravel", evt_phys)           ~ "Developed",
+      evt_phys == "Sparsely Vegetated"                         ~ NA_character_,
+      TRUE ~ evt_phys
+    )
+  ) %>%
+  filter(!is.na(evt_phys))
+
+top_bps_sankey <- bps_evt_norm %>%
+  group_by(bps_name, groupveg) %>%
+  summarise(bps_total = sum(count), .groups = "drop") %>%
+  arrange(desc(bps_total)) %>%
+  slice_head(n = 3) %>%
+  mutate(
+    bps_pct_total = bps_total / sum(bps_total),
+    bps_label = paste0(str_wrap(bps_name, width = 55), " (", percent(bps_pct_total, accuracy = 1), ")"),
+    bps_color = dplyr::coalesce(unname(groupveg_colors[groupveg]), "#c8c8c8")
+  )
+## TABLE
+
+
+
+top_bps_summary <- bps_evt_norm %>%
+  filter(bps_name %in% top_bps) %>%
+  mutate(
+    natural_veg = !evt_phys %in% c("Developed", "Agricultural")
+  ) %>%
+  group_by(bps_name) %>%
+  summarise(
+    total_area = sum(count, na.rm = TRUE),
+    natural_area = sum(count[natural_veg], na.rm = TRUE),
+    converted_area = total_area - natural_area,
+    pct_natural_remaining = natural_area / total_area,
+    .groups = "drop"
+  ) %>%
+  arrange(desc(total_area))
+
+
+## Succession classes
+
+bps_name_number <- read_csv("inputs/bps_model_number_name.csv")
+
+sclass_descriptions <- read_csv("inputs/scls_descriptions.csv")
