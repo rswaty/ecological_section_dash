@@ -13,7 +13,7 @@ format:
     toc-depth: 3
     embed-resources: true
 params:
-  section_na: "Midwest Driftless Area"
+  section_na: "Northern Minnesota Drift and Lake Plains"
 
 ---
 
@@ -397,24 +397,43 @@ filtered_sclass <- sclass_descriptions |>
     bps_name_number,
     by = c("bps_model" = "model_code"))
 
-url_template <- "https://github.com/rswaty/bps_docs_parse/raw/main/all_bps_docs/10080_1_2_3_7.docx"
+url_template <- "https://github.com/rswaty/bps_docs_parse/raw/main/all_bps_docs/"
 
 bps_urls <- filtered_sclass |>
-  filter(bps_name %in% bps_name_df$bps_name) |>
   distinct(bps_name, bps_model) |>
   mutate(
-    url = gsub(
-      "10080_1_2_3_7",
+    url = paste0(
+      url_template,
       bps_model,
-      url_template),
+      ".docx"),
     link = paste0(
       '<a href="', url, '" target="_blank">',
       bps_name,
       ' (', bps_model, ')',
       '</a>'))
 
+# Prepare Current Succession Class Data ----
+
+current_data <- bps_scls_gap |>
+  select(count, bps_model, bps_name, label) |>
+  unite(model_label, c("bps_model", "label"), remove = FALSE) |>
+  group_by(bps_model, model_label, label, bps_name) |>
+  summarise(
+    count = sum(count),
+    .groups = "drop") |>
+  group_by(bps_model) |>
+  mutate(
+    bps_total = sum(count),
+    current_percent = round(count / bps_total * 100)) |>
+  ungroup()
 
 
+# Select Most Prevalent BpS Model ----
+
+top_bps_models <- current_data |>
+  distinct(bps_model, bps_name, bps_total) |>
+  arrange(desc(bps_total)) |>
+  slice_head(n = 1)
 
 
 
@@ -951,10 +970,22 @@ current_data <- bps_scls_gap |>
 
 # Select Most Prevalent BpS Model ----
 
+message("section: ", section)
+message("top bps model: ", top_bps_models$bps_model[[1]])
+message("top bps name: ", top_bps_models$bps_name[[1]])
+message(
+  "disturbance rows: ",
+  sum(bps_transitions$bps_name == top_bps_models$bps_name[[1]]))
+message(
+  "document rows: ",
+  sum(bps_urls$bps_model == top_bps_models$bps_model[[1]]))
+
 top_bps_models <- current_data |>
   distinct(bps_model, bps_name, bps_total) |>
   arrange(desc(bps_total)) |>
   slice_head(n = 1)
+
+
 
 top_bps_doc <- bps_urls |>
   filter(bps_model == top_bps_models$bps_model[[1]]) |>
@@ -1150,29 +1181,19 @@ sclasplot
 
 # Historical Disturbance Regime ----
 
+top_bps_model_dist <- top_bps_models$bps_model[[1]]
 top_bps_name_dist <- top_bps_models$bps_name[[1]]
 
 trans_levels <- bps_transitions |>
-  filter(bps_name == top_bps_name_dist) |>
+  filter(model_code == top_bps_model_dist) |>
   distinct(transition) |>
   arrange(transition) |>
   pull(transition)
 
 bps_trans_plot <- bps_transitions |>
-  filter(bps_name == top_bps_name_dist) |>
+  filter(model_code == top_bps_model_dist) |>
   mutate(
-    pct_disturbed_yr = annual_probability * 100) |>
-  group_by(transition) |>
-  summarize(
-    pct_disturbed_yr = mean(pct_disturbed_yr, na.rm = TRUE),
-    n_models = n(),
-    .groups = "drop") |>
-  tidyr::complete(
-    transition = trans_levels,
-    fill = list(
-      pct_disturbed_yr = 0,
-      n_models = 0)) |>
-  mutate(
+    pct_disturbed_yr = annual_probability * 100,
     transition = factor(
       transition,
       levels = rev(trans_levels)))
@@ -1188,6 +1209,9 @@ ggplot(
     expand = expansion(mult = c(0, 0))) +
   labs(
     title = top_bps_name_dist,
+    subtitle = paste0(
+      "LANDFIRE BpS Model ",
+      top_bps_model_dist),
     x = "Percent disturbed per year",
     y = NULL) +
   theme_bw(base_size = 13) +
