@@ -7,7 +7,9 @@ library(tidyverse)
 data <- read.csv("inputs/sections_2025.csv")
 
 sections <- unique(data$section_na)
-sections <- head(sections, 5)   # test run
+# to render some
+sections <- sections[158:length(sections)]
+
 
 dir.create("reports", showWarnings = FALSE)
 
@@ -21,17 +23,21 @@ reports <- sections |>
   ) |>
   purrr::pwalk(function(section_na, output_file) {
     
-    # render into working directory
+    message("Rendering: ", section_na)
+    gc()
+    
     quarto::quarto_render(
       input = "demo_report.qmd",
       execute_params = list(section_na = section_na),
       output_file = output_file
     )
     
-    # move to reports/ after render
     file.rename(
       from = output_file,
-      to   = file.path("reports", output_file)
+      to = file.path("reports", output_file)
     )
+    
   })
+
+
 
