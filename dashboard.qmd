@@ -72,6 +72,15 @@ svg.girafe-svg {
 ```
 
 ```{r data prep, message=FALSE, warning=FALSE, include=FALSE}
+# Match map SECTION_NA to report filenames that used "_" for spaces/hyphens
+# and dropped periods (e.g. "St." -> "St").
+normalize_section_key <- function(x) {
+  x <- as.character(x)
+  x <- gsub("[._-]+", " ", x)
+  x <- gsub("\\s+", " ", x)
+  trimws(x)
+}
+
 shp <- st_read("inputs/sections_2025.shp", quiet = TRUE) |>
   st_transform(5070) |>
   arrange(SECTION_NA) |>
@@ -84,15 +93,18 @@ report_files <- list.files(
 )
 
 reports <- tibble(
-  SECTION_NA = report_files |>
+  section_key = report_files |>
     tools::file_path_sans_ext() |>
-    (\(x) gsub("_", " ", x))() |>
-    trimws(),
+    normalize_section_key(),
   path = file.path("reports", report_files)
 )
 
+# Guard against ambiguous matches after normalization
+stopifnot(!any(duplicated(reports$section_key)))
+
 shp <- shp |>
-  left_join(reports, by = "SECTION_NA") |>
+  mutate(section_key = normalize_section_key(SECTION_NA)) |>
+  left_join(reports, by = "section_key") |>
   mutate(
     has_report = !is.na(path),
     onclick = ifelse(
@@ -105,6 +117,8 @@ shp <- shp |>
       ifelse(has_report, "<br><i>Click to open report</i>", "<br><i>No report yet</i>")
     )
   )
+
+stopifnot(all(shp$has_report))
 
 states_map <- tigris::states(cb = TRUE, progress_bar = FALSE) |>
   st_as_sf() |>
