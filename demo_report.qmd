@@ -395,29 +395,38 @@ top_bps_summary <- bps_evt_norm %>%
 
 ## Succession classes
 
-bps_name_number <- read_csv("inputs/bps_model_number_name.csv")
+bps_name_number <- read_csv("inputs/bps_model_number_name.csv") |>
+  mutate(model_code = as.character(model_code))
 
-sclass_descriptions <- read_csv("inputs/scls_descriptions.csv")
+sclass_descriptions <- read_csv("inputs/scls_descriptions.csv") |>
+  mutate(bps_model = as.character(bps_model))
 
 filtered_sclass <- sclass_descriptions |>
   left_join(
     bps_name_number,
-    by = c("bps_model" = "model_code"))
+    by = c("bps_model" = "model_code")
+  )
 
+# BpS models present in the ecological section being rendered
+section_bps_models <- bps_scls_gap |>
+  transmute(bps_model = as.character(bps_model)) |>
+  distinct()
+
+# Base URL only
 url_template <- "https://github.com/rswaty/bps_docs_parse/raw/main/all_bps_docs/"
 
-bps_urls <- filtered_sclass |>
-  distinct(bps_name, bps_model) |>
+bps_urls <- filtered_sclass %>%
+  distinct(bps_name, bps_model) %>%
   mutate(
-    url = paste0(
-      url_template,
-      bps_model,
-      ".docx"),
+    bps_model = as.character(bps_model),
+    url = paste0(url_template, bps_model, ".docx"),
     link = paste0(
-      '<a href="', url, '" target="_blank">',
-      bps_name,
-      ' (', bps_model, ')',
-      '</a>'))
+      "", url, "",
+      bps_name, " (", bps_model, ")",
+      "</a>"
+    )
+  )
+  
 
 # Prepare Current Succession Class Data ----
 
