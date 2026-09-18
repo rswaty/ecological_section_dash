@@ -8,7 +8,7 @@ data <- read.csv("inputs/sections_2025.csv")
 
 sections <- unique(data$section_na)
 # to render some
-sections <- sections[158:length(sections)]
+sections <- sections[86:length(sections)]
 
 
 dir.create("reports", showWarnings = FALSE)

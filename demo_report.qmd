@@ -378,14 +378,20 @@ top_bps_sankey <- bps_evt_norm %>%
 
 
 top_bps_summary <- bps_evt_norm %>%
-  filter(bps_name %in% top_bps) %>%
+  mutate(bps_model = as.character(bps_model)) %>%
+  semi_join(
+    bps_scls_gap %>%
+      transmute(bps_model = as.character(bps_model)) %>%
+      distinct(),
+    by = "bps_model"
+  ) %>%
   mutate(
     natural_veg = !evt_phys %in% c("Developed", "Agricultural")
   ) %>%
-  group_by(bps_name) %>%
+  group_by(bps_name, bps_model) %>%
   summarise(
-    total_area = sum(count, na.rm = TRUE),
-    natural_area = sum(count[natural_veg], na.rm = TRUE),
+    total_area = round(sum(count, na.rm = TRUE) * 0.2223945),
+    natural_area = round(sum(count[natural_veg], na.rm = TRUE) * 0.2223945),
     converted_area = total_area - natural_area,
     pct_natural_remaining = natural_area / total_area,
     .groups = "drop"
@@ -484,9 +490,9 @@ This tool primarily helps with elements of Indicator 6.5.1 and may additionally 
 
 The first step to identifying RSAs (as outlined in Annex G) is to identify native ecosystems that would typically occur in the management unit given current climate and soil conditions. This ﬁrst section helps to identify the historic native ecosystems that should occur in the landscape given the existing climate and soil conditions (an essential element of Indicator 6.5.1). It then helps to identify the existing ecosystems that are currently present within the landscape (using [LANDFIRE](https://landfire.gov/) data).
 
-Importantly, these assessments only cover the top 10 most prevalent ecosystems. For lesser present ecosystems, we suggest reviewing additional data sources such as State Wildlife Action Plans, [NatureServe](https://www.natureserve.org/), or local conservation initiatives to ensure you have a full understanding of the landscape(s) in which your management unit occurs.
+Importantly, these assessments focus on ecosystems greater than 1,000 acres. For lesser present ecosystems, we suggest reviewing additional data sources such as State Wildlife Action Plans, [NatureServe](https://www.natureserve.org/), or local conservation initiatives to ensure you have a full understanding of the landscape(s) in which your management unit occurs.
 
-This section also provides tables of the percent of the top 3 ecosystems that should occur given historic data (historic native ecosystems) that remain or are converted to currently present existing ecosystems.
+This section also provides Sankey charts for the top 3 most prevalent Historic Native Ecosystems, plus a conversion summary table for all Historic Native Ecosystem models in this Ecological Section.
 
 
 
@@ -650,10 +656,10 @@ if(length(small_evt) > 0) {
 
 For this Ecological Section:
 
-* LANDFIRE data shows there were **`r number_of_bps`** Historic Native Ecosystems (counting regional model variants separately).  
-* The top 10 Historic Native Ecosystems presented here covered **`r bps_top10_pct`%** of the total area. 
+* LANDFIRE data shows there were **`r number_of_bps`** Historic Native Ecosystem models (counting regional model variants separately).  
+* The 10 largest Historic Native Ecosystems covered **`r bps_top10_pct`%** of total mapped area in this Ecological Section. 
 * As of 2024 LANDFIRE mapped **`r number_evt`** Existing Ecosystems for this Ecological Section.
-* The top 10 Existing Ecosystems cover **`r evt_top10_pct`%** of the total area. 
+* The 10 largest Existing Vegetation Types (including agricultural, developed, and water types) covered **`r evt_top10_pct`%** of total mapped area in this Ecological Section. 
 
 
 :::
@@ -670,7 +676,7 @@ For the charts below we assessed the amounts of each Existing Ecosystem (at a co
 
 * The Historic Native Ecosystem is on the left, coarse-level Existing Ecosystems on the right.
 * Hover over the grey horizontal bands to explore how Historic Native Ecosystems have split out to the associated Existing Ecosystems on the current landscape.  
-* The total current percent of each Existing Ecosystem for this Ecological Section quantified in parentheses.
+* The percent in parentheses on the left is that Historic Native Ecosystem's share of the three footprints shown (not of the full Ecological Section).
 
 
 
@@ -762,7 +768,7 @@ tagList(out)
 
 ### Summary Table of Conversion
 
-In the table below we summarize conversion of the top 10 Historic Native Ecosystems. All area values are in acres.  Click on column names to sort.
+In the table below we summarize conversion of all Historic Native Ecosystem models in this Ecological Section. All area values are in acres. "Natural vegetation remaining" means not Agricultural or Developed (exotic vegetation is counted as remaining). Click on column names to sort.
 
 <br> 
 
@@ -783,6 +789,7 @@ top_bps_summary %>%
   ) %>%
   select(
     `Native Ecosystem` = bps_name,
+    `Model Code` = bps_model,
     `Total Area`,
     `Natural Vegetation Remaining`,
     `Converted (Agriculture + Developed)`,
@@ -792,17 +799,20 @@ top_bps_summary %>%
   datatable(
     rownames = FALSE,
     options = list(
-      dom = "t",                # <-- removes ALL table controls
+      dom = "t",
       ordering = TRUE,
+      pageLength = -1,
+      scrollY = "480px",
+      scrollCollapse = TRUE,
       columnDefs = list(
-        list(visible = FALSE, targets = 5)  # hide the numeric sort col
+        list(visible = FALSE, targets = 6)  # hide the numeric sort col
       )
     )
   ) %>%
 
 
 formatStyle(
-  columns = 1:5,   # only visible columns
+  columns = 1:6,   # only visible columns
   `text-align` = "center"
 )
 
@@ -1312,7 +1322,7 @@ In order to better understand the quantity of historic ecosystems, their protect
 
 ## Historic Native Ecosystem Descriptions 
 
-To better understand 'reference' conditions for the Historic Native Ecosystems of the US, the LANDFIRE program developed descriptions plus accompanying state-and-transition models that depict how these systems 'looked and functioned' with natural disturbance regimes.  Below you can download the descriptions for the dominant Native Ecosystems and explore the succession class descriptions in a table.
+To better understand 'reference' conditions for the Historic Native Ecosystems of the US, the LANDFIRE program developed descriptions plus accompanying state-and-transition models that depict how these systems 'looked and functioned' with natural disturbance regimes.  Below you can download the descriptions for this section's Native Ecosystems and explore the succession class descriptions in a table.
 
 LANDFIRE developed and delivers this information by Map Zone.  If an ecosystem crosses multiple Map Zones there may be multiple 'variants'.  In the table of links to the descriptions you will see "Model Codes", which represent an unique 5 digit code for the system followed by a list of Map Zones that description applies to.  
 
