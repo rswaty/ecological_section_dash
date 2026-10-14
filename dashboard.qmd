@@ -1,5 +1,5 @@
 ---
-title: RSA Landscapes Map
+title: Representative Sample Area (RSA) Assessment Tool
 format:
   dashboard:
     vertical_layout: fill
@@ -182,30 +182,45 @@ map_widget
 
 ## Column {width=30%}
 
-<h3>Landscape-Scale Assessments for RSA Identification</h3>
+<h3>Landscape information to support FSC US FSS Criterion 6.5 assessments and RSA designation decisions</h3>
 
-This tool has been developed by [The Nature Conservancy’s LANDFIRE staff](https://storymaps.arcgis.com/stories/f37983671094430ebd23035596deccb6) with oversight by the [Forest Stewardship Council US](https://us.fsc.org/). Its purpose is to support FSC US forest management certificate holders with assessments related to Criterion 6.5, Representative Sample Area (RSA) requirements, within the FSC US Forest Stewardship Standard (FSS V2.0).
+This tool helps FSC US forest management certificate holders assess whether native ecosystems are adequately represented and protected in the landscape surrounding their management unit. Use the reports with local information to decide whether Representative Sample Areas (RSAs) are needed under Criterion 6.5 of the [FSC US Forest Stewardship Standard V2.0](https://connect.fsc.org/document-centre/documents/resource/242){target="_blank"} (US FSS).
 
-Annex G of the FSC US FSS V2.0 references Ecological Sections as originally defined by Cleland et al. (refined in 2025 by the USDA Forest Service), as an appropriate scale by which “landscape level” assessments for the purposes of RSA establishment may be made. This tool provides several broad scale assessments for each landscape (or Ecological Section) through generating a report that may be used by FSC forest management certificate holders as a first step towards meeting requirements related to RSAs. Importantly, the data used to generate these reports is designed for large scale use, and the assessments provided only cover very broad aspects of the requirements related to RSAs. Input ecosystems data comes from the LANDFIRE program, and input protected status data comes from US Geological Survey’s Protected Areas Database. Additional research and consultation with local experts or finer-scaled data will be necessary for certificate holders to demonstrate conformance with requirements of Criterion 6.5.
+Select the Ecological Section containing your management unit to open its report. If your management unit crosses section boundaries, review each relevant report.
 
-The Ecological Sections (2025 version) are from the [USDA Forest Service](https://data.fs.usda.gov/geodata/edw/datasets.php?xmlKeyword=sections). Input ecosystems data for the analyses comes from the [LANDFIRE](https://landfire.gov/) program, and protected status from [US Geological Survey’s Protected Areas Database](https://www.usgs.gov/programs/gap-analysis-project/science/pad-us-data-overview).
+<h3>What the reports show</h3>
+
+Each report helps you understand:
+
+* **Historical native ecosystems:** The native ecosystems expected under pre-colonization disturbance patterns, given current climate, soils, and other physical conditions.
+* **Existing ecosystems:** The ecosystems currently mapped in the landscape.
+* **Protection of existing ecosystems:** How much of each existing ecosystem occurs within protected areas and the level of protection those areas provide.
+
+Use this information with local knowledge and other available information to assess whether native ecosystems are adequately represented and protected in your landscape.
+
+<h3>What the tool does not determine</h3>
+The reports provide landscape context. They do not identify RSA boundaries, determine whether protection is adequate, or establish conformance with Criterion 6.5.
+
+Local data, finer-scale analysis, field observations, or expert consultation may be needed to complete your assessment. Small or rare ecosystems require particular attention because landscape data may not capture them reliably.
 
 
-
-
-
-The Ecological Sections (2025 version) are from [the USDA Forest Service](https://data.fs.usda.gov/geodata/edw/datasets.php?xmlKeyword=sections), and serve as 'landscapes' within Annex G, Representative Sample Areas.  Input ecosystems data for the analyses comes from the [LANDFIRE](https://landfire.gov/) program, and protected status from US Geological Survey's [Protected Areas Database](https://www.usgs.gov/programs/gap-analysis-project/science/pad-us-data-overview). 
-
-**Click the Ecological Section of interest to access custom report.**
+See Criterion 6.5 in the [US FSS](https://connect.fsc.org/document-centre/documents/resource/242){target="_blank"} for the requirements, and Annex G for further guidance.
 
 <br>
 
+---
 
-<div style="text-align: center; padding-top: 20px; padding-bottom: 50px;">
-![](images/logosall.png){width=80% fig-alt="LANDFIRE logo"}
+Developed by [The Nature Conservancy's LANDFIRE Team](https://storymaps.arcgis.com/collections/21a22e163439413c9ce1d8e2ef0b1311?item=6){target="_blank"} with oversight from [FSC US](https://us.fsc.org/){target="_blank"}.
+
+<div style="text-align: center; margin-top: 30px;">
+  <img src="images/logosall.png"
+       alt="LANDFIRE and FSC logos"
+       style="display: block; width: 80%; max-width: 100%; height: auto; margin: 0 auto;">
+
+  <div style="display: block; clear: both; margin-top: 25px; font-style: italic;">
+    FSC® licence code F000232
+  </div>
 </div>
-
-*FSC® licence code F000232*
 
 # Resources  {orientation="columns" scrolling="false"}
 
