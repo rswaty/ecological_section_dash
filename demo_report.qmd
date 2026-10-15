@@ -479,7 +479,7 @@ Use the report with local information to decide whether Representative Sample Ar
 
 ### What this report shows
 
-- **Historical native ecosystems:** The native ecosystems expected under pre-colonization disturbance patterns, given current climate, soils, and other physical conditions.
+- **Historic native ecosystems:** The native ecosystems expected under pre-colonization disturbance patterns, given current climate, soils, and other physical conditions.
 - **Existing ecosystems:** The ecosystems currently mapped in the landscape.
 - **Protection of existing ecosystems:** How much of each existing ecosystem occurs within protected areas and the level of protection those areas provide.
 
@@ -510,7 +510,7 @@ Historical native ecosystems are modeled estimates, rather than a record of cond
 
 The two datasets were developed and revised at different times. Their ecosystem names and categories do not always correspond directly. See Annex A – Understanding the Data for more information.
 
-### Historic Native Ecosystems Greater than 1,000 acres
+### Historic Native Ecosystems
 
 This chart shows the modeled area of each historical native ecosystem covering more than 1,000 acres across the Ecological Section.
 
@@ -578,7 +578,7 @@ cat(
 )
 ```
 
-It is important to note that LANDFIRE data is designed for landscape-level assessments and not designed for analysis of ‘rare’ systems. Please take this into account, explore surrounding ecological sections, and look to more localized sources of information such as State Wildlife Action Plans, NatureServe, and others to better understand the likely historic and current occurrence of these rarer systems.
+
 
 ### Existing Ecosystems
 
@@ -851,7 +851,7 @@ formatStyle(
 
 ## Protection of existing ecosystems
 
-This chart shows how much of each existing ecosystem is mapped within lands assigned GAP Status 1, 2, or 3 in the U.S. Geological Survey’s Protected Areas Database (PAD-US).
+This chart shows how much of each existing ecosystem is mapped within lands assigned GAP Status 1, 2, or 3 in the [U.S. Geological Survey’s Protected Areas Database](https://www.usgs.gov/programs/gap-analysis-project/science/pad-us-data-overview){target="_blank"} (PAD-US).
 
 GAP status describes protection from land conversion and the management intent for an area. It helps you assess protection, but does not establish the condition of the ecosystem or whether its protection is adequate.
 
@@ -1002,7 +1002,9 @@ plotly::ggplotly(
 
 ### Document your findings
 
-Record the native ecosystems considered, the information used, and your conclusions about representation and protection. Explain how the landscape findings relate to your management unit and identify any information gaps. Retain this report with the local information and other evidence supporting your assessment.
+Record the native ecosystems considered, the information used, and your conclusions about representation and protection. Explain how the landscape findings relate to your management unit and identify any information gaps. 
+
+Retain this report with the local information and other evidence supporting your assessment.
 
 ### If native ecosystems are adequately represented and protected
 
@@ -1036,12 +1038,10 @@ Where RSAs are needed, the comparison can help you consider examples containing 
 
 ### Reading the succession class labels
 
-* Early, Mid, and Late describe developmental stages.
-* OPN means open canopy; CLS means closed canopy; ALL includes all canopy conditions.
-* UN means uncharacteristic native vegetation: native vegetation whose current structure falls outside the model’s reference classes.
-* UE means uncharacteristic exotic vegetation.
-
-See the linked ecosystem description for the species and vegetation structure associated with each class. 
+* **Early, Mid, and Late** describe developmental stages.
+* **OPN** means open canopy; **CLS** means closed canopy; **AL*L** includes all canopy conditions.
+* **UN** means uncharacteristic native vegetation: native vegetation whose current structure falls outside the model’s reference classes.
+* **UE** means uncharacteristic exotic vegetation.
 
 An ecosystem may have several regional model versions. This chart uses the single most widespread version in the Ecological Section rather than combining versions with different reference conditions.
 
@@ -1335,7 +1335,7 @@ ggplot(
 
 ## Annex A: Understanding the data
 
-### Historical native ecosystems — Biophysical Settings
+### Historic native ecosystems — Biophysical Settings
 
 LANDFIRE’s Biophysical Settings data model the native ecosystems expected under pre-colonization disturbance patterns, given current climate, soils, and other physical conditions. This report calls them historical native ecosystems.
 

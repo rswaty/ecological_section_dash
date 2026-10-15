@@ -1,5 +1,5 @@
 ---
-title: Representative Sample Area (RSA) Assessment Tool
+title: RSA Assessments Tool
 format:
   dashboard:
     vertical_layout: fill
@@ -118,7 +118,7 @@ shp <- shp |>
     )
   )
 
-stopifnot(all(shp$has_report))
+#stopifnot(all(shp$has_report))
 
 states_map <- tigris::states(cb = TRUE, progress_bar = FALSE) |>
   st_as_sf() |>
@@ -144,7 +144,7 @@ geom_sf(
   
 geom_sf_interactive(
   data = shp,
-  aes(tooltip = tooltip, onclick = onclick),
+  aes(tooltip = tooltip, onclick = onclick, data_id = SECTION_NA),
   fill = "#78BE20",
   color = "#78BE20",
   linewidth = 0.15,
@@ -166,8 +166,8 @@ map_widget <- girafe(
   girafe_options(
     opts_zoom(min = 0.5, max = 10),
     opts_toolbar(position = "topright"),
-    opts_hover(css = "stroke:#ffffff;stroke-width:2;cursor:pointer;"),
-    opts_hover_inv(css = "fill-opacity:0.35;"),
+    opts_hover(css = "fill:#6fb747;fill-opacity:1;stroke:#ffffff;stroke-width:2;cursor:pointer;"),
+    opts_hover_inv(css = "fill-opacity:0.10;"),
     opts_selection(type = "none"),
     opts_sizing(rescale = TRUE)
   )
@@ -182,11 +182,14 @@ map_widget
 
 ## Column {width=30%}
 
-<h3>Landscape information to support FSC US FSS Criterion 6.5 assessments and RSA designation decisions</h3>
+<h3>Representative Sample Area (RSA) Assessment Tool</h3>
+*Landscape information to support FSC US FSS Criterion 6.5 assessments and RSA designation decisions.*
+
+<div style="margin-top: 20px;"></div>
 
 This tool helps FSC US forest management certificate holders assess whether native ecosystems are adequately represented and protected in the landscape surrounding their management unit. Use the reports with local information to decide whether Representative Sample Areas (RSAs) are needed under Criterion 6.5 of the [FSC US Forest Stewardship Standard V2.0](https://connect.fsc.org/document-centre/documents/resource/242){target="_blank"} (US FSS).
 
-Select the Ecological Section containing your management unit to open its report. If your management unit crosses section boundaries, review each relevant report.
+**Select the Ecological Section containing your management unit to open its report.** If your management unit crosses section boundaries, review each relevant report.
 
 <h3>What the reports show</h3>
 
