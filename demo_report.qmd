@@ -479,7 +479,7 @@ Use the report with local information to decide whether Representative Sample Ar
 
 ### What this report shows
 
-- **Historic native ecosystems:** The native ecosystems expected under pre-colonization disturbance patterns, given current climate, soils, and other physical conditions.
+- **Historical native ecosystems:** The native ecosystems expected under pre-colonization disturbance patterns, given current climate, soils, and other physical conditions.
 - **Existing ecosystems:** The ecosystems currently mapped in the landscape.
 - **Protection of existing ecosystems:** How much of each existing ecosystem occurs within protected areas and the level of protection those areas provide.
 
@@ -500,7 +500,7 @@ Local data, finer-scale analysis, field observations, or expert consultation may
 
 See Criterion 6.5 in the [US FSS](https://connect.fsc.org/document-centre/documents/resource/242){target="_blank"} for the requirements, and Annex G for further guidance.
 
-## Historic Native and Existing Ecosystems
+## Historical native and existing ecosystems
 
 Start by identifying which native ecosystems would typically occur in your management unit given its current climate and soils.
 
@@ -510,7 +510,7 @@ Historical native ecosystems are modeled estimates, rather than a record of cond
 
 The two datasets were developed and revised at different times. Their ecosystem names and categories do not always correspond directly. See Annex A – Understanding the Data for more information.
 
-### Historic Native Ecosystems
+### Historical native ecosystems
 
 This chart shows the modeled area of each historical native ecosystem covering more than 1,000 acres across the Ecological Section.
 
@@ -580,7 +580,7 @@ cat(
 
 
 
-### Existing Ecosystems
+### Existing ecosystems
 
 This chart shows the mapped area of each existing ecosystem covering more than 1,000 acres across the Ecological Section, using the 2024 LANDFIRE data.
 
@@ -667,7 +667,7 @@ These landscape data may miss or inaccurately map small or rare ecosystems. An e
 Review sources such as State Heritage Programs, State Wildlife Action Plans, NatureServe, and local conservation assessments to identify ecosystems that need closer consideration.
 
 ::: callout-tip
-## Historic Native and Existing Ecosystems
+## Historic native and existing ecosystems
 
 For this Ecological Section:
 
@@ -857,7 +857,7 @@ GAP status describes protection from land conversion and the management intent f
 
 ### What the protection levels mean
 
-The following are simplified explanations. See the linked USGS definitions for the full descriptions.
+The following are simplified explanations. See the PAD-US page linked above for the full descriptions.
 
 - **GAP Status 1:** Permanent protection from conversion, with management to maintain a natural state and allow or mimic natural disturbance.
 - **GAP Status 2:** Permanent protection from conversion, with management to maintain a primarily natural state. Some uses or management practices may affect the quality of natural communities.
@@ -1024,7 +1024,7 @@ Use local information to identify suitable sites and evaluate restoration feasib
 
 The following information can help you consider ecosystem development stages and historical disturbance patterns when selecting or managing RSAs. It is additional guidance, rather than a separate requirement to designate an RSA for every development stage.
 
-Due to the complexities of multiple variants and scale, we only present the most common Historical Native Ecosystem per chart as an example of the analysis that can be conducted for all remaining ecosystems. Please contact Randy Swaty at [rswaty\@tnc.org](rswaty@tnc.org){target="_blank"} or The Nature Conservancy’s LANDFIRE team at [landfire\@tnc.org](landfire@tnc.org){target="_blank"} for more information. Additionally, the LANDFIRE team and members of the [Conservation Data Lab](https://conservationdatalab.org/){target="_blank"} have put together a [GIS guide that explains how to conduct a succession class analysis on your own using ArcGIS Pro and Microsoft Excel](https://thenatureconservancy.github.io/landfire-guide/){target="_blank"}.
+Due to the complexities of multiple variants and scale, we only present the most common historical native ecosystem per chart as an example of the analysis that can be conducted for all remaining ecosystems. Please contact Randy Swaty at [rswaty\@tnc.org](rswaty@tnc.org){target="_blank"} or The Nature Conservancy’s LANDFIRE team at [landfire\@tnc.org](landfire@tnc.org){target="_blank"} for more information. Additionally, the LANDFIRE team and members of the [Conservation Data Lab](https://conservationdatalab.org/){target="_blank"} have put together a [GIS guide that explains how to conduct a succession class analysis on your own using ArcGIS Pro and Microsoft Excel](https://thenatureconservancy.github.io/landfire-guide/){target="_blank"}.
 
 ### Ecosystem development stages
 
@@ -1039,9 +1039,11 @@ Where RSAs are needed, the comparison can help you consider examples containing 
 ### Reading the succession class labels
 
 * **Early, Mid, and Late** describe developmental stages.
-* **OPN** means open canopy; **CLS** means closed canopy; **AL*L** includes all canopy conditions.
+* **OPN** means open canopy; **CLS** means closed canopy; **ALL** includes all canopy conditions.
 * **UN** means uncharacteristic native vegetation: native vegetation whose current structure falls outside the model’s reference classes.
 * **UE** means uncharacteristic exotic vegetation.
+
+See the linked ecosystem reference document below for the species and vegetation structure associated with each class.
 
 An ecosystem may have several regional model versions. This chart uses the single most widespread version in the Ecological Section rather than combining versions with different reference conditions.
 
@@ -1264,7 +1266,7 @@ sclasplot
 
 <br>
 
-**Reference document for the dominant Historic Native Ecosystem:**
+**Reference document for the most common historical native ecosystem for this Ecological Section:**
 
 `r top_bps_doc`
 
@@ -1335,7 +1337,7 @@ ggplot(
 
 ## Annex A: Understanding the data
 
-### Historic native ecosystems — Biophysical Settings
+### Historical native ecosystems — Biophysical Settings
 
 LANDFIRE’s Biophysical Settings data model the native ecosystems expected under pre-colonization disturbance patterns, given current climate, soils, and other physical conditions. This report calls them historical native ecosystems.
 
