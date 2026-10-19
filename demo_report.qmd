@@ -532,7 +532,7 @@ bps_name_chart <-
   geom_bar(stat = "identity", fill = "#00703C") +
   labs(
     subtitle = "",
-    caption = "Biophysical Settings (refered to as Historic Native Ecosystems here) data obtained from https://landfire.gov/vegetation/bps.",
+    caption = "Biophysical Settings (refered to as historical native ecosystems here) data obtained from https://landfire.gov/vegetation/bps.",
     x = "",
     y = "Acres") +
   scale_x_discrete(limits = rev(bps_name_df$bps_name),
@@ -667,7 +667,7 @@ These landscape data may miss or inaccurately map small or rare ecosystems. An e
 Review sources such as State Heritage Programs, State Wildlife Action Plans, NatureServe, and local conservation assessments to identify ecosystems that need closer consideration.
 
 ::: callout-tip
-## Historic native and existing ecosystems
+## Historical native and existing ecosystems
 
 For this Ecological Section:
 
@@ -1364,7 +1364,7 @@ All of these datasets provide landscape information. Check their findings agains
 
 ## Annex B: Historical native ecosystem descriptions
 
-To better understand ‘reference’ conditions for the Historic Native Ecosystems of the US, the LANDFIRE program developed descriptions plus accompanying state-and-transition models that depict how these systems ‘looked and functioned’ with natural disturbance regimes. Below you can download the descriptions for this section’s Native Ecosystems and explore the succession class descriptions in a table.
+To better understand ‘reference’ conditions for the historical native ecosystems of the US, the LANDFIRE program developed descriptions plus accompanying state-and-transition models that depict how these systems ‘looked and functioned’ with natural disturbance regimes. Below you can download the descriptions for this section’s Native Ecosystems and explore the succession class descriptions in a table.
 
 LANDFIRE developed and delivers this information by Map Zone. If an ecosystem crosses multiple Map Zones there may be multiple ‘variants’. In the table of links to the descriptions you will see “Model Codes”, which represent an unique 5 digit code for the system followed by a list of Map Zones that description applies to.
 
