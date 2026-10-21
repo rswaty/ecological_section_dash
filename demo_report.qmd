@@ -467,7 +467,7 @@ top_bps_models <- current_data |>
 
 ::::: columns
 ::: {.column width="35%"}
-This report helps FSC US forest management certificate holders assess whether native ecosystems are adequately represented and protected in the **`r params$section_na`** Ecological Section. This Ecological Section is the landscape assessed in this report.
+This report helps FSC US forest management certificate holders assess whether native ecosystems are adequately represented and protected in the **`r params$section_na`** Ecological Section. 
 
 Use the report with local information to decide whether Representative Sample Areas (RSAs) are needed within your management unit under Criterion 6.5 of the [FSC US Forest Stewardship Standard V2.0](https://connect.fsc.org/document-centre/documents/resource/242){target="_blank"} (US FSS).
 :::
@@ -494,7 +494,7 @@ Use local knowledge and other available information throughout your assessment. 
 
 ### What this report does not determine
 
-This report provides landscape context. It does not identify RSA boundaries, determine whether protection is adequate, or establish conformance with Criterion 6.5.
+As a reminder this report provides landscape context. It does not identify RSA boundaries, determine whether protection is adequate, or establish conformance with Criterion 6.5.
 
 Local data, finer-scale analysis, field observations, or expert consultation may be needed to complete your assessment. Small or rare ecosystems require particular attention because landscape data may not capture them reliably.
 
@@ -508,7 +508,7 @@ The following charts show historical native ecosystems and existing ecosystems a
 
 Historical native ecosystems are modeled estimates, rather than a record of conditions at every site before colonization. Existing ecosystems represent conditions mapped by LANDFIRE in 2024.
 
-The two datasets were developed and revised at different times. Their ecosystem names and categories do not always correspond directly. See Annex A – Understanding the Data for more information.
+The historical native ecosystems dataset and existing ecosystems dataset were developed and revised at different times. Their ecosystem names and categories do not always correspond directly. See Annex A – Understanding the Data for more information.
 
 ### Historical native ecosystems
 
@@ -584,7 +584,7 @@ cat(
 
 This chart shows the mapped area of each existing ecosystem covering more than 1,000 acres across the Ecological Section, using the 2024 LANDFIRE data.
 
-The dataset also includes agricultural land, developed land, and water. These categories help describe the current landscape alongside its ecosystems.
+The dataset also includes agricultural land, developed land, and water. These categories help describe the current land cover alongside its ecosystems.
 
 These landscape data do not capture small or rare ecosystems reliably. Existing ecosystems mapped across less than 1,000 acres are listed below the chart.
 
@@ -1341,7 +1341,7 @@ ggplot(
 
 LANDFIRE’s Biophysical Settings data model the native ecosystems expected under pre-colonization disturbance patterns, given current climate, soils, and other physical conditions. This report calls them historical native ecosystems.
 
-Each ecosystem model has a description of its characteristic species, structure, and disturbance patterns, together with estimates of its reference succession class distribution.
+Annex B contains descriptions of each historical native ecosystem's characteristic species, structure, and disturbance patterns, together with estimates of its reference succession class distribution.
 
 ### Existing ecosystems — Existing Vegetation Type
 LANDFIRE’s Existing Vegetation Type data map ecosystems currently present in the landscape. The dataset also includes agricultural land, developed land, water, and other cover categories.
@@ -1364,7 +1364,7 @@ All of these datasets provide landscape information. Check their findings agains
 
 ## Annex B: Historical native ecosystem descriptions
 
-To better understand ‘reference’ conditions for the historical native ecosystems of the US, the LANDFIRE program developed descriptions plus accompanying state-and-transition models that depict how these systems ‘looked and functioned’ with natural disturbance regimes. Below you can download the descriptions for this section’s Native Ecosystems and explore the succession class descriptions in a table.
+To better understand ‘reference’ conditions for the historical native ecosystems of the US, the LANDFIRE program developed descriptions plus accompanying state-and-transition models that depict how these systems ‘looked and functioned’ with natural disturbance regimes. Below you can download the descriptions for this section’s historical native ecosystems and explore the succession class descriptions in a table.
 
 LANDFIRE developed and delivers this information by Map Zone. If an ecosystem crosses multiple Map Zones there may be multiple ‘variants’. In the table of links to the descriptions you will see “Model Codes”, which represent an unique 5 digit code for the system followed by a list of Map Zones that description applies to.
 
