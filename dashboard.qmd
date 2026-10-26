@@ -187,7 +187,7 @@ map_widget
 
 <div style="margin-top: 20px;"></div>
 
-This tool helps FSC US forest management certificate holders assess whether native ecosystems are adequately represented and protected in the landscape surrounding their management unit. Use the reports with local information to decide whether Representative Sample Areas (RSAs) are needed under Criterion 6.5 of the [FSC US Forest Stewardship Standard V2.0](https://connect.fsc.org/document-centre/documents/resource/242){target="_blank"} (US FSS).
+This tool helps FSC US forest management certificate holders assess whether native ecosystems are adequately represented and protected in the landscape surrounding their management unit (per Indicator 6.5.1)[AE2.1]. However, in many situations, this tool alone may not provide all of the information needed for a full RSA assessment.[AE3.1] Use the reports with local information to decide whether Representative Sample Areas (RSAs) are needed under Criterion 6.5 of the [FSC US Forest Stewardship Standard V2.0](https://connect.fsc.org/document-centre/documents/resource/242){target="_blank"} (US FSS).
 
 **Select the Ecological Section containing your management unit to open its report.** If your management unit crosses section boundaries, review each relevant report.
 
@@ -195,8 +195,8 @@ This tool helps FSC US forest management certificate holders assess whether nati
 
 Each report helps you understand:
 
-* **Historical native ecosystems:** The native ecosystems expected under pre-colonization disturbance patterns, given current climate, soils, and other physical conditions.
-* **Existing ecosystems:** The ecosystems currently mapped in the landscape.
+* **Historical native ecosystems:** The most prominent native ecosystems expected under pre-colonization disturbance patterns, given current climate, soils, and other physical conditions.
+* **Existing ecosystems:** The most prominent ecosystems currently mapped in the landscape.
 * **Protection of existing ecosystems:** How much of each existing ecosystem occurs within protected areas and the level of protection those areas provide.
 
 Use this information with local knowledge and other available information to assess whether native ecosystems are adequately represented and protected in your landscape.

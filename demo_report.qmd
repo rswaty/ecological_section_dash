@@ -467,9 +467,9 @@ top_bps_models <- current_data |>
 
 ::::: columns
 ::: {.column width="35%"}
-This report helps FSC US forest management certificate holders assess whether native ecosystems are adequately represented and protected in the **`r params$section_na`** Ecological Section. 
+This report helps FSC US forest management certificate holders assess whether native ecosystems are adequately represented and protected in the **`r params$section_na`** Ecological Section (per Indicator 6.5.1). 
 
-Use the report with local information to decide whether Representative Sample Areas (RSAs) are needed within your management unit under Criterion 6.5 of the [FSC US Forest Stewardship Standard V2.0](https://connect.fsc.org/document-centre/documents/resource/242){target="_blank"} (US FSS).
+This tool alone will not provide all of the information needed for a full RSA assessment. Use the report with local information to decide whether Representative Sample Areas (RSAs) are needed within your management unit under Criterion 6.5 of the [FSC US Forest Stewardship Standard V2.0](https://connect.fsc.org/document-centre/documents/resource/242){target="_blank"} (US FSS).
 :::
 
 ::: {.column width="65%"}
@@ -479,8 +479,8 @@ Use the report with local information to decide whether Representative Sample Ar
 
 ### What this report shows
 
-- **Historical native ecosystems:** The native ecosystems expected under pre-colonization disturbance patterns, given current climate, soils, and other physical conditions.
-- **Existing ecosystems:** The ecosystems currently mapped in the landscape.
+- **Historical native ecosystems:** The most prominent native ecosystems expected under pre-colonization disturbance patterns, given current climate, soils, and other physical conditions.
+- **Existing ecosystems:** The most prominent ecosystems currently mapped in the landscape.
 - **Protection of existing ecosystems:** How much of each existing ecosystem occurs within protected areas and the level of protection those areas provide.
 
 ### How to use this report
@@ -490,7 +490,7 @@ Use the report with local information to decide whether Representative Sample Ar
 3.  Review protection levels and assess whether the relevant native ecosystems are adequately represented and protected.
 4.  Document your findings and determine the applicable RSA next steps.
 
-Use local knowledge and other available information throughout your assessment. If your management unit crosses Ecological Section boundaries, review each relevant report.
+Use local knowledge and other available information throughout your assessment to compliment this tool and fill information gaps. If your management unit crosses Ecological Section boundaries, review each relevant report.
 
 ### What this report does not determine
 
@@ -851,9 +851,9 @@ formatStyle(
 
 ## Protection of existing ecosystems
 
-This chart shows how much of each existing ecosystem is mapped within lands assigned GAP Status 1, 2, or 3 in the [U.S. Geological Survey’s Protected Areas Database](https://www.usgs.gov/programs/gap-analysis-project/science/pad-us-data-overview){target="_blank"} (PAD-US).
+This chart shows how much of each existing ecosystem covering more than 1,000 acres across the Ecological Section is mapped within lands assigned GAP Status 1, 2, or 3 in the [U.S. Geological Survey’s Protected Areas Database](https://www.usgs.gov/programs/gap-analysis-project/science/pad-us-data-overview){target="_blank"} (PAD-US).
 
-GAP status describes protection from land conversion and the management intent for an area. It helps you assess protection, but does not establish the condition of the ecosystem or whether its protection is adequate.
+GAP status describes protection from land conversion and the management intent for an area. The chart below helps you assess protection, but does not establish a threshold at which any given ecosystem’s protection level is automatically constituted as “adequately” protected (per Indicator 6.5.1).   
 
 ### What the protection levels mean
 
@@ -873,7 +873,7 @@ Review the categories separately. They provide different levels of protection an
 
 Low mapped protection can identify ecosystems for closer review. High mapped protection also needs context: consider whether the protected areas contain viable examples and whether their management supports conservation of the native ecosystem.
 
-Use the chart with local information to reach and explain your conclusions about representation and protection. No percentage shown here automatically establishes adequate protection.
+Use the chart with local information to reach and explain your conclusions about representation and protection adequacy (per Indicator 6.5.1). There is no pre-defined threshold of percent mapped in GAP status lands that automatically establishes “adequate” protection (per Indicator 6.5.1). 
 
 ```{r}
 #| label: protected area
@@ -1008,17 +1008,17 @@ Retain this report with the local information and other evidence supporting your
 
 ### If native ecosystems are adequately represented and protected
 
-Your assessment may conclude that RSA designation is unnecessary. Document the evidence and reasoning supporting that conclusion.
+Your assessment may conclude that RSA designation is unnecessary (per Indicators 6.5.1 and 6.5.2). Document the evidence and reasoning supporting that conclusion.
 
-Check the remaining Criterion 6.5 requirements, including restoration provisions and Conservation Areas Network requirements.
+Check the remaining Criterion 6.5 requirements, including restoration provisions (Indicators 6.5.3 and 6.5.4) and Conservation Areas Network requirements (Indicator 6.5.7). 
 
 ### If native ecosystems are not adequately represented and protected
 
-Apply Indicator 6.5.2. Designate viable examples within your management unit as RSAs and manage them to conserve the ecosystem. If viable examples are absent but degraded examples can feasibly be restored, designate those areas as RSAs and manage them to restore more natural conditions.
+Following the requirements in Indicator 6.5.2., designate viable examples within your management unit as RSAs and manage them to conserve the ecosystem. If viable examples are absent but degraded examples can feasibly be restored, designate those areas as RSAs and manage them to restore more natural conditions.
 
 If suitable examples are absent, or the designated areas are insufficient, review Indicators 6.5.3 and 6.5.4.
 
-Use local information to identify suitable sites and evaluate restoration feasibility. Check any applicable interim provisions in the US FSS.
+Use local information to identify suitable sites and evaluate restoration feasibility. 
 
 ## Optional information for RSA selection and management
 
