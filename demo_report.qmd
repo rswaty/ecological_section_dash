@@ -795,15 +795,16 @@ make_sankey <- function(bps, bps_label, bps_color) {
 
 plot_ly(
   type = "sankey",
+  height = 560,
   orientation = "h",
   node = list(
     label = nodes,
     color = node_colors,
-    pad = 18,
+    pad = 34,
     thickness = 20,
-    font = list(family = "Lato", size = 16),
     hoverinfo = "none"
   ),
+  textfont = list(family = "Lato", size = 20, color = "#212529"),
   link = list(
     source = links$source,
     target = links$target,
