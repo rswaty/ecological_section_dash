@@ -494,7 +494,7 @@ Use local knowledge and other available information throughout your assessment t
 
 ### What this report does not determine
 
-As a reminder this report provides landscape context. It does not identify RSA boundaries, determine whether protection is adequate, or establish conformance with Criterion 6.5.
+As a reminder, this report provides landscape context. It does not identify RSA boundaries, determine whether protection is adequate, or establish conformance with Criterion 6.5.
 
 Local data, finer-scale analysis, field observations, or expert consultation may be needed to complete your assessment. Small or rare ecosystems require particular attention because landscape data may not capture them reliably.
 
@@ -853,7 +853,7 @@ formatStyle(
 
 This chart shows how much of each existing ecosystem covering more than 1,000 acres across the Ecological Section is mapped within lands assigned GAP Status 1, 2, or 3 in the [U.S. Geological Survey’s Protected Areas Database](https://www.usgs.gov/programs/gap-analysis-project/science/pad-us-data-overview){target="_blank"} (PAD-US).
 
-GAP status describes protection from land conversion and the management intent for an area. The chart below helps you assess protection, but does not establish a threshold at which any given ecosystem’s protection level is automatically constituted as “adequately” protected (per Indicator 6.5.1).   
+GAP status describes protection from land conversion and the management intent for an area. The chart below helps you assess protection, but does not establish a threshold at which any given ecosystem’s protection level is automatically constituted “adequately” protected (per Indicator 6.5.1).   
 
 ### What the protection levels mean
 
