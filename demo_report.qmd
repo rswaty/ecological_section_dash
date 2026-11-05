@@ -746,6 +746,8 @@ For help analyzing additional ecosystems beyond the top three, contact Randy Swa
 
 The percentage beside each historical native ecosystem name is its share of the three modeled areas shown, rather than its share of the entire Ecological Section.
 
+Because native historical and existing ecosystems differ in naming at their finest classification levels, and because displaying the many fine-level ecosystem types would make the charts difficult to read, existing ecosystems on the right are shown using a coarser classification included in the dataset. 
+
 Use these charts to identify changes that warrant closer review. They do not establish how much of a historical native ecosystem remains in good ecological condition.
 
 ```{r}
