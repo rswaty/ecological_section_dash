@@ -14,8 +14,18 @@ format:
     toc-depth: 3
     embed-resources: true
 params:
-  section_na: "Florida Atlantic Coastal Lowlands"
+  section_na: "Glaciated New England Coast"
 ---
+
+```{=html}
+<style>
+.dataTables_wrapper,
+table.dataTable {
+  font-family: Lato, sans-serif;
+  font-size: 16px;
+}
+</style>
+```
 
 ```{r setup, message=FALSE, warning=FALSE, include=FALSE}
 
@@ -32,6 +42,42 @@ library(gt)
 library(knitr)
 library(htmltools)
 library(kableExtra)
+
+report_chart_text <- theme(
+  text = element_text(family = "Lato", size = 12),
+  axis.text = element_text(family = "Lato", size = 12),
+  axis.title = element_text(family = "Lato", size = 12),
+  legend.text = element_text(family = "Lato", size = 12),
+  legend.title = element_text(family = "Lato", size = 12),
+  plot.title = element_text(family = "Lato", size = 12),
+  plot.subtitle = element_text(family = "Lato", size = 12),
+  plot.caption = element_text(family = "Lato", size = 12)
+)
+
+use_report_font <- function(p) {
+  p$x$layout$font <- list(family = "Lato", size = 16)
+  for (ax in c("xaxis", "yaxis")) {
+    if (!is.null(p$x$layout[[ax]])) {
+      p$x$layout[[ax]]$tickfont <- list(family = "Lato", size = 16)
+      if (is.list(p$x$layout[[ax]]$title)) {
+        p$x$layout[[ax]]$title$font <- list(family = "Lato", size = 16)
+      }
+    }
+  }
+  if (is.list(p$x$layout$legend)) {
+    p$x$layout$legend$font <- list(family = "Lato", size = 16)
+    if (is.list(p$x$layout$legend$title)) {
+      p$x$layout$legend$title$font <- list(family = "Lato", size = 16)
+    }
+  }
+  if (!is.null(p$x$layout$annotations)) {
+    p$x$layout$annotations <- lapply(p$x$layout$annotations, function(a) {
+      a$font <- list(family = "Lato", size = 16)
+      a
+    })
+  }
+  p
+}
 
 
 section <- if (exists("params") && !is.null(params$section_na)) {
@@ -332,7 +378,7 @@ evt_colors <- c(
   "Hardwood"     = "#B3D5A7",
   "Shrubland"    = "#5E3D7F",
   "Grassland"    = "#A4956E",
-  "Riparian"     = "#5688C7",
+  "Wetland, riparian and floodplain types" = "#5688C7",
   "Exotics"      = "#F15D50",
   "Agricultural" = "#FFE772",
   "Developed"    = "#999999"
@@ -351,6 +397,7 @@ bps_evt_norm <- bps_evt %>%
   mutate(
     evt_phys = case_when(
       evt_phys %in% c("Exotic Herbaceous", "Exotic Tree-Shrub") ~ "Exotics",
+      evt_phys == "Riparian"                                   ~ "Wetland, riparian and floodplain types",
       evt_phys == "Agricultural"                               ~ "Agricultural",
       evt_phys == "Developed"                                  ~ "Developed",
       grepl("^Developed", evt_phys)                            ~ "Developed",
@@ -523,7 +570,7 @@ These landscape data do not capture small or rare ecosystems reliably. Historica
 #| echo: false
 #| message: false
 #| warning: false
-#| fig.height: 15
+#| fig.height: !expr max(15, nrow(bps_name_df) * 0.42)
 #| fig.width: 10
 
 # plot
@@ -539,7 +586,8 @@ bps_name_chart <-
                    labels = function(x) str_wrap(x, width = 40)) +
   scale_y_continuous(labels = comma) +
   coord_flip() +
-  theme_bw(base_size = 12) +
+  theme_bw(base_size = 12, base_family = "Lato") +
+  report_chart_text +
   theme(
   panel.grid = element_blank(),
   plot.margin = margin(
@@ -593,7 +641,7 @@ These landscape data do not capture small or rare ecosystems reliably. Existing 
 #| echo: false
 #| message: false
 #| warning: false
-#| fig.height: 17
+#| fig.height: !expr max(17, nrow(top_evt_names_df) * 0.42)
 #| fig.width: 10
 
 
@@ -614,7 +662,8 @@ evt_name_chart <-
   labels = function(x) str_wrap(x, width = 40)) +
   scale_y_continuous(labels = comma) +
   coord_flip() +
-  theme_bw(base_size = 12) +
+  theme_bw(base_size = 12, base_family = "Lato") +
+  report_chart_text +
   theme(
   panel.grid = element_blank(),
   plot.margin = margin(
@@ -713,10 +762,17 @@ make_sankey <- function(bps, bps_label, bps_color) {
     filter(bps_name == bps) %>%
     group_by(evt_phys) %>%
     summarise(count = sum(count), .groups = "drop") %>%
-    mutate(pct = count / sum(count)) %>%
+    mutate(
+      pct = count / sum(count),
+      node_label = if_else(
+        evt_phys == "Wetland, riparian and floodplain types",
+        "Wetland, riparian<br>and floodplain types",
+        evt_phys
+      )
+    ) %>%
     arrange(desc(pct))
 
-  nodes <- c(bps_label, flows$evt_phys)
+  nodes <- c(bps_label, flows$node_label)
 
   node_index <- tibble(
     name = nodes,
@@ -724,14 +780,12 @@ make_sankey <- function(bps, bps_label, bps_color) {
   )
 
   links <- flows %>%
-    left_join(node_index, by = c("evt_phys" = "name")) %>%
+    left_join(node_index, by = c("node_label" = "name")) %>%
     mutate(
       source = 0,
       target = id,
       value  = pct,
-      label = paste0("Currently ", percent(pct, accuracy = 1), " ", evt_phys
-)
-
+      label = paste0("Currently ", percent(pct, accuracy = 1), " ", evt_phys)
     )
 
   node_colors <- c(
@@ -747,7 +801,7 @@ plot_ly(
     color = node_colors,
     pad = 18,
     thickness = 20,
-    font = list(size = 32),
+    font = list(family = "Lato", size = 16),
     hoverinfo = "none"
   ),
   link = list(
@@ -759,7 +813,7 @@ plot_ly(
     ),
     hovertemplate = "%{customdata}<extra></extra>"
   )
-)  |> layout(font = list(size = 18))
+)  |> layout(font = list(family = "Lato", size = 16))
 }
 
 out <- lapply(seq_len(nrow(top_bps_sankey)), function(i) {
@@ -911,7 +965,7 @@ n_evts <- dplyr::n_distinct(evt_pad_summary$evt_name)
 
 plot_height <- max(
   1100,
-  n_evts * 70
+  n_evts * 78
 )
 
 plot <-
@@ -951,7 +1005,8 @@ plot <-
     drop = FALSE,
     na.translate = FALSE
   ) +
-  theme_bw(base_size = 12) +
+  theme_bw(base_size = 12, base_family = "Lato") +
+  report_chart_text +
   theme(
     panel.grid = element_blank()
   ) +
@@ -963,26 +1018,35 @@ plot <-
     y = "Percent of Total Existing Ecosystem Protected by GAP Status 1, 2, & 3 within the Ecological Section"
   )
 
-plotly::ggplotly(
+protection_plot <- plotly::ggplotly(
   plot,
   height = plot_height,
   tooltip = "text"
 ) |>
   plotly::layout(
     autosize = TRUE,
+    height = plot_height,
     margin = list(
-      l = 325,
-      r = 40,
-      t = 60,
-      b = 80
+      l = 230,
+      r = 24,
+      t = 100,
+      b = 80,
+      autoexpand = FALSE
+    ),
+    legend = list(
+      orientation = "h",
+      x = 0,
+      y = 1.02,
+      xanchor = "left",
+      yanchor = "bottom"
     ),
     xaxis = list(
       fixedrange = TRUE,
-      automargin = TRUE
+      automargin = FALSE
     ),
     yaxis = list(
       fixedrange = TRUE,
-      automargin = TRUE
+      automargin = FALSE
     ),
     dragmode = FALSE,
     bargap = 0.4
@@ -992,6 +1056,22 @@ plotly::ggplotly(
     displayModeBar = FALSE,
     responsive = TRUE
   )
+
+protection_plot <- use_report_font(protection_plot)
+protection_plot$height <- plot_height
+protection_plot$sizingPolicy$knitr$figure <- FALSE
+
+htmlwidgets::onRender(
+  protection_plot,
+  "function(el) {
+    var h = el.layout && el.layout.height;
+    if (h) el.style.height = h + 'px';
+    if (el.parentElement) el.parentElement.style.overflow = 'visible';
+    if (window.Plotly && Plotly.Plots && Plotly.Plots.resize) {
+      Plotly.Plots.resize(el);
+    }
+  }"
+)
 
 
 ```
@@ -1251,15 +1331,17 @@ sclasplot <-
     caption = "Data from landfire.gov.",
     x = NULL,
     y = "Percent of BpS model area") +
-  theme_bw(base_size = 13) +
+  theme_bw(base_size = 12, base_family = "Lato") +
+  report_chart_text +
   theme(
     legend.position = "top",
     legend.justification = "left",
     plot.title.position = "plot",
     plot.caption.position = "plot",
     plot.caption = element_text(
-      hjust = 0,
-      face = "italic"))
+      family = "Lato",
+      size = 12,
+      hjust = 0))
 
 sclasplot
 ```
@@ -1322,7 +1404,8 @@ ggplot(
       top_bps_model_dist),
     x = "Percent disturbed per year",
     y = NULL) +
-  theme_bw(base_size = 13) +
+  theme_bw(base_size = 12, base_family = "Lato") +
+  report_chart_text +
   theme(
     panel.grid.minor = element_blank(),
     plot.margin = margin(
