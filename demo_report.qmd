@@ -58,6 +58,15 @@ report_chart_text <- theme(
   plot.caption = element_text(family = "Lato", size = 12, colour = report_text_color)
 )
 
+bar_label_wrap <- 50
+
+# ggplot gives every bar the same height, so size rows to fit the tallest wrapped name
+bar_chart_height <- function(names, min_height) {
+  max_lines <- max(stringr::str_count(stringr::str_wrap(names, bar_label_wrap), "\n") + 1)
+  row_height <- max(0.42, max_lines * 0.21 + 0.16)
+  max(min_height, length(names) * row_height + 1.2)
+}
+
 use_report_font <- function(p) {
   p$x$layout$font <- list(family = "Lato", size = 16)
   for (ax in c("xaxis", "yaxis")) {
@@ -574,7 +583,7 @@ These landscape data do not capture small or rare ecosystems reliably. Historica
 #| echo: false
 #| message: false
 #| warning: false
-#| fig.height: !expr max(15, nrow(bps_name_df) * 0.42)
+#| fig.height: !expr bar_chart_height(bps_name_df$bps_name, min_height = 15)
 #| fig.width: 10
 
 # plot
@@ -587,7 +596,7 @@ bps_name_chart <-
     x = "",
     y = "Acres") +
   scale_x_discrete(limits = rev(bps_name_df$bps_name),
-                   labels = function(x) str_wrap(x, width = 40)) +
+                   labels = function(x) str_wrap(x, width = bar_label_wrap)) +
   scale_y_continuous(labels = comma) +
   coord_flip() +
   theme_bw(base_size = 12, base_family = "Lato") +
@@ -596,7 +605,7 @@ bps_name_chart <-
   panel.grid.minor = element_blank(),
   plot.margin = margin(
     t = 5,
-    r = 5,
+    r = 30,
     b = 5,
     l = 40
   )
@@ -645,7 +654,7 @@ These landscape data do not capture small or rare ecosystems reliably. Existing 
 #| echo: false
 #| message: false
 #| warning: false
-#| fig.height: !expr max(17, nrow(top_evt_names_df) * 0.42)
+#| fig.height: !expr bar_chart_height(top_evt_names_df$evt_name, min_height = 17)
 #| fig.width: 10
 
 
@@ -663,7 +672,7 @@ evt_name_chart <-
     y = "Acres") +
   scale_x_discrete(
   limits = rev(top_evt_names_df |> filter(acres > 1000) |> pull(evt_name)),
-  labels = function(x) str_wrap(x, width = 40)) +
+  labels = function(x) str_wrap(x, width = bar_label_wrap)) +
   scale_y_continuous(labels = comma) +
   coord_flip() +
   theme_bw(base_size = 12, base_family = "Lato") +
@@ -672,7 +681,7 @@ evt_name_chart <-
   panel.grid.minor = element_blank(),
   plot.margin = margin(
     t = 5,
-    r = 5,
+    r = 30,
     b = 5,
     l = 40
   )
