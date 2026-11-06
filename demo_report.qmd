@@ -414,7 +414,7 @@ top_bps_sankey <- bps_evt_norm %>%
   arrange(desc(bps_total)) %>%
   slice_head(n = 3) %>%
   mutate(
-    bps_pct_total = bps_total / sum(bps_total),
+    bps_pct_total = bps_total / total_count_bps,
     bps_label = paste0(str_wrap(bps_name, width = 55), " (", percent(bps_pct_total, accuracy = 1), ")"),
     bps_color = dplyr::coalesce(unname(groupveg_colors[groupveg]), "#c8c8c8")
   )
@@ -744,7 +744,7 @@ For help analyzing additional ecosystems beyond the top three, contact Randy Swa
 - The right side groups existing ecosystems and other land cover into broad categories.
 - The connecting bands show how much of the historical native ecosystem’s modeled area falls into each current category. Hover over a band to see its value.
 
-The percentage beside each historical native ecosystem name is its share of the three modeled areas shown, rather than its share of the entire Ecological Section.
+The percentage beside each historical native ecosystem name is its share of the Ecological Section’s total mapped area, so the three percentages usually add up to less than 100%.
 
 The existing ecosystems on the right are shown at a coarse classification level. This is in part because the historical native and existing ecosystems datasets use different names at their finest classification levels, but it is also in order to provide a simple, big-picture view of what areas historically mapped as these native ecosystems look like today. 
 
