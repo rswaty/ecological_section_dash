@@ -744,7 +744,7 @@ For help analyzing additional ecosystems beyond the top three, contact Randy Swa
 - The right side groups existing ecosystems and other land cover into broad categories.
 - The connecting bands show how much of the historical native ecosystem’s modeled area falls into each current category. Hover over a band to see its value.
 
-The percentage beside each historical native ecosystem name is its share of the Ecological Section’s total mapped area, so the three percentages usually add up to less than 100%.
+The percentage beside each historical native ecosystem name is its share of the Ecological Section’s total mapped area.  The percentages for the existing ecosystems are calculated within the native historical ecosystems footprint.
 
 The existing ecosystems on the right are shown at a coarse classification level. This is in part because the historical native and existing ecosystems datasets use different names at their finest classification levels, but it is also in order to provide a simple, big-picture view of what areas historically mapped as these native ecosystems look like today. 
 
