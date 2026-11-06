@@ -43,6 +43,8 @@ library(knitr)
 library(htmltools)
 library(kableExtra)
 
+knitr::opts_chunk$set(dev = "ragg_png")
+
 report_chart_text <- theme(
   text = element_text(family = "Lato", size = 12),
   axis.text = element_text(family = "Lato", size = 12),

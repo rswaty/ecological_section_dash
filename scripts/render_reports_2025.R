@@ -3,6 +3,13 @@
 library(quarto)
 library(tidyverse)
 
+if (!requireNamespace("ragg", quietly = TRUE)) {
+  stop("Package 'ragg' is required for report charts. Run install.packages('ragg').")
+}
+if (!"Lato" %in% systemfonts::system_fonts()$family) {
+  stop("Lato font is not installed. Install it (Google Fonts) and restart R before rendering.")
+}
+
 
 data <- read.csv("inputs/sections_2025.csv")
 
