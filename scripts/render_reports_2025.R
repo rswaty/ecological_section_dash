@@ -15,7 +15,7 @@ data <- read.csv("inputs/sections_2025.csv")
 
 sections <- unique(data$section_na)
 # to render some
-sections <- sections[99:188]
+# sections <- sections[99:188]
 
 
 dir.create("reports", showWarnings = FALSE)
@@ -39,10 +39,9 @@ reports <- sections |>
       output_file = output_file
     )
     
-    file.rename(
-      from = output_file,
-      to = file.path("reports", output_file)
-    )
+    if (!file.rename(from = output_file, to = file.path("reports", output_file))) {
+      stop("Could not move ", output_file, " into reports/")
+    }
     
   })
 

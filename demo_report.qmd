@@ -779,11 +779,7 @@ make_sankey <- function(bps, bps_label, bps_color) {
     summarise(count = sum(count), .groups = "drop") %>%
     mutate(
       pct = count / sum(count),
-      node_label = if_else(
-        evt_phys == "Wetland, riparian and floodplain types",
-        "Wetland, riparian<br>and floodplain types",
-        evt_phys
-      )
+      node_label = evt_phys
     ) %>%
     arrange(desc(pct))
 
