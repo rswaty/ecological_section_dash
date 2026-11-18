@@ -3,6 +3,9 @@ title: RSA Assessments Tool
 format:
   dashboard:
     vertical_layout: fill
+    
+metadata-files: 
+  - _extra.yml
 ---
 
 ```{r setup, include=FALSE}
@@ -241,5 +244,17 @@ Learn about and download the revised Forest Stewardship Standard for the US at [
 * [Ecological Sections Data (USDA Forest Service)](https://data.fs.usda.gov/geodata/edw/datasets.php?xmlKeyword=sections).  Ecological polygons used in dashboard to stratify the coterminous US for analysys and report generation.  Formal citation: USDA Forest Service, 2025. EcoMap 2025: Ecological Sections and Subsections for the Conterminous United States. Washington, DC: US Department of Agriculture, Forest Service, Natural Resources and Geospatial Office. 
 * [US Geological Survey Protected Areas Database](https://www.usgs.gov/programs/gap-analysis-project/science/pad-us-data-overview).  Data used to quantify levels of protection per Existing Ecosystem within each Ecological Section. 
 
+<h2>Feedback</h2>
+
+<iframe
+  src="https://forms.cloud.microsoft/r/kzniHR95ri?embed=true"
+  width="100%"
+  height="800"
+  frameborder="0"
+  marginwidth="0"
+  marginheight="0"
+  style="border: none; display: block;"
+  allowfullscreen>
+</iframe>
 
 
